@@ -385,7 +385,7 @@
                     startMouseX = e.clientX;
                     startMouseY = e.clientY;
                     selectNode(node.id);
-                    e.stopPropagation();
+                    e.stopPropagation(); // Mencegah event pan canvas tertrigger saat drag node
                 };
 
                 window.addEventListener('mousemove', (e) => {
@@ -445,9 +445,10 @@
         }
 
         function setupPanAndZoom() {
+            // Menggunakan event mousedown langsung pada workspace utama
             visualWorkspace.onmousedown = (e) => {
-                // Hanya aktifkan pan jika yang diklik adalah background area kerja, bukan node atau tombol
-                if (e.target.closest('.node-card')) return;
+                // Jika yang diklik adalah node card atau tombol di dalam node, abaikan pan canvas
+                if (e.target.closest('.node-card') || e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
                 isPanning = true;
                 startX = e.clientX - panX;
                 startY = e.clientY - panY;
