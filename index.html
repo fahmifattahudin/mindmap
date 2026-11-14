@@ -129,8 +129,8 @@
             <div class="absolute bottom-4 left-4 bg-slate-900/90 backdrop-blur border border-slate-700 p-3 rounded-xl shadow-xl text-xs text-slate-400 z-30 pointer-events-none max-w-xs">
                 <p class="font-semibold text-slate-200 mb-1"><i class="fa-solid fa-circle-info text-indigo-400 mr-1.5"></i>Quick Guide:</p>
                 <p>• Click node to edit / add branch.</p>
+                <p>• Click arrow icon on node to Collapse/Expand branches.</p>
                 <p>• Pan canvas with click & drag background.</p>
-                <p>• Use mouse scroll to Zoom In/Out.</p>
             </div>
         </div>
 
@@ -187,7 +187,6 @@
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Node Background Color</label>
-                    <!-- Expanded Color Palette + Custom Color Picker -->
                     <div class="flex flex-wrap gap-2 items-center">
                         <button onclick="updateActiveNodeColor('#4f46e5')" class="w-7 h-7 rounded-full bg-indigo-600 hover:scale-110 transition border-2 border-slate-700 cursor-pointer" title="Indigo"></button>
                         <button onclick="updateActiveNodeColor('#6366f1')" class="w-7 h-7 rounded-full bg-indigo-500 hover:scale-110 transition border-2 border-slate-700 cursor-pointer" title="Light Indigo"></button>
@@ -202,7 +201,6 @@
                         <button onclick="updateActiveNodeColor('#8b5cf6')" class="w-7 h-7 rounded-full bg-purple-500 hover:scale-110 transition border-2 border-slate-700 cursor-pointer" title="Purple"></button>
                         <button onclick="updateActiveNodeColor('#ec4899')" class="w-7 h-7 rounded-full bg-pink-500 hover:scale-110 transition border-2 border-slate-700 cursor-pointer" title="Pink"></button>
                         <button onclick="updateActiveNodeColor('#64748b')" class="w-7 h-7 rounded-full bg-slate-500 hover:scale-110 transition border-2 border-slate-700 cursor-pointer" title="Slate"></button>
-                        <!-- Custom Color Picker Input -->
                         <div class="relative w-7 h-7 rounded-full overflow-hidden border-2 border-slate-700 hover:scale-110 transition cursor-pointer" title="Custom Color">
                             <input type="color" id="inspectColorPicker" onchange="updateActiveNodeColor(this.value)" class="absolute -top-2 -left-2 w-12 h-12 cursor-pointer">
                         </div>
@@ -323,10 +321,10 @@
         let mindMapData = {
             title: "My Main Idea",
             nodes: [
-                { id: "root", text: "Main Idea", x: 2300, y: 2300, color: "#4f46e5", shape: "rounded", notes: "Central idea of this mind map.", priority: "normal", lineStyle: "bezier", parent: null },
-                { id: "child-1", text: "Market Research", x: 2000, y: 2100, color: "#0ea5e9", shape: "rounded", notes: "Competitor analysis and target audience.", priority: "high", lineStyle: "bezier", parent: "root" },
-                { id: "child-2", text: "App Features", x: 2600, y: 2100, color: "#10b981", shape: "rounded", notes: "List of key features to develop.", priority: "medium", lineStyle: "bezier", parent: "root" },
-                { id: "child-3", text: "Monetization", x: 2000, y: 2500, color: "#f59e0b", shape: "rounded", notes: "Revenue models and sponsorships.", priority: "normal", lineStyle: "bezier", parent: "root" }
+                { id: "root", text: "Main Idea", x: 2300, y: 2300, color: "#4f46e5", shape: "rounded", notes: "Central idea of this mind map.", priority: "normal", lineStyle: "bezier", parent: null, collapsed: false },
+                { id: "child-1", text: "Market Research", x: 2000, y: 2100, color: "#0ea5e9", shape: "rounded", notes: "Competitor analysis and target audience.", priority: "high", lineStyle: "bezier", parent: "root", collapsed: false },
+                { id: "child-2", text: "App Features", x: 2600, y: 2100, color: "#10b981", shape: "rounded", notes: "List of key features to develop.", priority: "medium", lineStyle: "bezier", parent: "root", collapsed: false },
+                { id: "child-3", text: "Monetization", x: 2000, y: 2500, color: "#f59e0b", shape: "rounded", notes: "Revenue models and sponsorships.", priority: "normal", lineStyle: "bezier", parent: "root", collapsed: false }
             ]
         };
 
@@ -461,7 +459,7 @@
             mindMapData = {
                 title: mapTitle,
                 nodes: [
-                    { id: "root", text: mapTitle, x: 2300, y: 2300, color: "#4f46e5", shape: "rounded", notes: "Central idea for " + mapTitle, priority: "normal", lineStyle: "bezier", parent: null }
+                    { id: "root", text: mapTitle, x: 2300, y: 2300, color: "#4f46e5", shape: "rounded", notes: "Central idea for " + mapTitle, priority: "normal", lineStyle: "bezier", parent: null, collapsed: false }
                 ]
             };
             currentMapId = newId;
@@ -529,7 +527,7 @@
                 mindMapData = {
                     title: "Untitled Map",
                     nodes: [
-                        { id: "root", text: "Main Idea", x: 2300, y: 2300, color: "#4f46e5", shape: "rounded", notes: "", priority: "normal", lineStyle: "bezier", parent: null }
+                        { id: "root", text: "Main Idea", x: 2300, y: 2300, color: "#4f46e5", shape: "rounded", notes: "", priority: "normal", lineStyle: "bezier", parent: null, collapsed: false }
                     ]
                 };
             }
@@ -594,20 +592,46 @@
             saveToLocalStorage();
         }
 
+        // Helper function to check if a node is hidden because an ancestor is collapsed
+        function isNodeHidden(node) {
+            let curr = node;
+            while (curr && curr.parent) {
+                const parentNode = mindMapData.nodes.find(function(n) { return n.id === curr.parent; });
+                if (parentNode && parentNode.collapsed) {
+                    return true;
+                }
+                curr = parentNode;
+            }
+            return false;
+        }
+
+        function toggleCollapse(nodeId, e) {
+            if (e) e.stopPropagation();
+            const node = mindMapData.nodes.find(function(n) { return n.id === nodeId; });
+            if (node) {
+                node.collapsed = !node.collapsed;
+                render();
+            }
+        }
+
         function render() {
             nodesContainer.innerHTML = '';
             connectionsLayer.innerHTML = '';
 
+            // 1. Draw connections only for visible nodes
             mindMapData.nodes.forEach(function(node) {
-                if (node.parent) {
+                if (node.parent && !isNodeHidden(node)) {
                     const parentNode = mindMapData.nodes.find(function(n) { return n.id === node.parent; });
-                    if (parentNode) {
+                    if (parentNode && !isNodeHidden(parentNode)) {
                         drawConnection(parentNode, node, node.lineStyle || 'bezier');
                     }
                 }
             });
 
+            // 2. Render visible nodes
             mindMapData.nodes.forEach(function(node) {
+                if (isNodeHidden(node)) return;
+
                 const el = document.createElement('div');
                 el.className = "absolute pointer-events-auto node-card cursor-pointer flex items-center shadow-xl p-3.5 select-none transition-all";
                 el.style.left = node.x + 'px';
@@ -629,6 +653,22 @@
 
                 if (node.id === activeNodeId) {
                     el.style.boxShadow = '0 0 0 4px rgba(255, 255, 255, 0.8), 0 10px 25px -5px rgba(0,0,0,0.4)';
+                }
+
+                // Check if this node has children
+                const children = mindMapData.nodes.filter(function(n) { return n.parent === node.id; });
+                const hasChildren = children.length > 0;
+
+                // Collapse/Expand toggle button (if has children)
+                if (hasChildren) {
+                    const collapseBtn = document.createElement('button');
+                    collapseBtn.className = "absolute -right-3 top-1/2 transform -translate-y-1/2 w-6 h-6 bg-slate-900/80 hover:bg-slate-900 text-white rounded-full flex items-center justify-center text-[10px] border border-slate-700 shadow transition cursor-pointer z-30";
+                    collapseBtn.title = node.collapsed ? "Expand Branch" : "Collapse Branch";
+                    collapseBtn.innerHTML = node.collapsed ? '<i class="fa-solid fa-plus"></i>' : '<i class="fa-solid fa-minus"></i>';
+                    collapseBtn.onclick = function(e) {
+                        toggleCollapse(node.id, e);
+                    };
+                    el.appendChild(collapseBtn);
                 }
 
                 const innerFlex = document.createElement('div');
@@ -801,7 +841,6 @@
                 document.getElementById('inspectPriority').value = node.priority || 'normal';
                 document.getElementById('inspectLineStyle').value = node.lineStyle || 'bezier';
                 
-                // Set color picker value if node has color
                 if (node.color) {
                     document.getElementById('inspectColorPicker').value = node.color;
                 }
@@ -882,7 +921,8 @@
                 notes: "",
                 priority: "normal",
                 lineStyle: "bezier",
-                parent: parentId
+                parent: parentId,
+                collapsed: false
             });
 
             selectNode(newId);
@@ -928,7 +968,8 @@
                 notes: "",
                 priority: "normal",
                 lineStyle: "bezier",
-                parent: "root"
+                parent: "root",
+                collapsed: false
             });
             render();
         }
@@ -1097,7 +1138,8 @@
                     notes: "AI Brainstorm Result",
                     priority: "high",
                     lineStyle: "bezier",
-                    parent: "root"
+                    parent: "root",
+                    collapsed: false
                 });
 
                 const subIdeas = ["Core Strategy", "Execution Steps", "Risk Analysis", "Target & Metrics"];
@@ -1112,7 +1154,8 @@
                         notes: 'Details for ' + sub,
                         priority: "normal",
                         lineStyle: "bezier",
-                        parent: newId
+                        parent: newId,
+                        collapsed: false
                     });
                 });
 
