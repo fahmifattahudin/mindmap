@@ -359,24 +359,17 @@
                 }
 
                 let priorityBadge = '';
-                if (node.priority === 'high') priorityBadge = '<span class="ml-2 text-xs bg-red-900/60 text-red-200 px-1.5 py-0.5 rounded">🔴 High</span>';
-                if (node.priority === 'medium') priorityBadge = '<span class="ml-2 text-xs bg-amber-900/60 text-amber-200 px-1.5 py-0.5 rounded">🟡 Med</span>';
-                if (node.priority === 'low') priorityBadge = '<span class="ml-2 text-xs bg-emerald-900/60 text-emerald-200 px-1.5 py-0.5 rounded">🟢 Low</span>';
+                if (node.priority === 'high') {
+                    priorityBadge = '<span class="ml-2 text-xs bg-red-900/60 text-red-200 px-1.5 py-0.5 rounded">🔴 High</span>';
+                } else if (node.priority === 'medium') {
+                    priorityBadge = '<span class="ml-2 text-xs bg-amber-900/60 text-amber-200 px-1.5 py-0.5 rounded">🟡 Med</span>';
+                } else if (node.priority === 'low') {
+                    priorityBadge = '<span class="ml-2 text-xs bg-emerald-900/60 text-emerald-200 px-1.5 py-0.5 rounded">🟢 Low</span>';
+                }
 
                 let notesHtml = node.notes ? '<div class="text-xs opacity-80 truncate mt-0.5">' + escapeHtml(node.notes) + '</div>' : '';
 
-                el.innerHTML = '\
-                    <div class="flex-1 overflow-hidden">\
-                        <div class="font-bold text-sm truncate flex items-center justify-between">\
-                            <span>' + escapeHtml(node.text) + '</span>\
-                            ' + priorityBadge + '\
-                        </div>\
-                        ' + notesHtml + '\
-                    </div>\
-                    <button onclick="event.stopPropagation(); addChildNode(\'' + node.id + '\')" class="ml-2 w-6 h-6 bg-black/20 hover:bg-black/40 rounded-full flex items-center justify-center text-white text-xs transition shrink-0 cursor-pointer" title="Add Branch">\
-                        <i class="fa-solid fa-plus"></i>\
-                    </button>\
-                ';
+                el.innerHTML = '<div class="flex-1 overflow-hidden"><div class="font-bold text-sm truncate flex items-center justify-between"><span>' + escapeHtml(node.text) + '</span>' + priorityBadge + '</div>' + notesHtml + '</div><button onclick="event.stopPropagation(); addChildNode(\'' + node.id + '\')" class="ml-2 w-6 h-6 bg-black/20 hover:bg-black/40 rounded-full flex items-center justify-center text-white text-xs transition shrink-0 cursor-pointer" title="Add Branch"><i class="fa-solid fa-plus"></i></button>';
 
                 let isDraggingNode = false;
                 let startMouseX, startMouseY;
@@ -687,16 +680,7 @@
             
             let notesHtml = node.notes ? '<span class="text-xs text-slate-400 italic">(' + escapeHtml(node.notes) + ')</span>' : '';
 
-            div.innerHTML = '\
-                <div class="flex items-center space-x-3">\
-                    <span class="w-3 h-3 rounded-full" style="background-color: ' + node.color + '"></span>\
-                    <span class="font-semibold text-white text-sm">' + escapeHtml(node.text) + '</span>\
-                    ' + notesHtml + '\
-                </div>\
-                <button onclick="addChildNode(\'' + node.id + '\'); toggleViewMode();" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-1 rounded-lg transition cursor-pointer">\
-                    <i class="fa-solid fa-plus mr-1"></i>Sub-branch\
-                </button>\
-            ';
+            div.innerHTML = '<div class="flex items-center space-x-3"><span class="w-3 h-3 rounded-full" style="background-color: ' + node.color + '"></span><span class="font-semibold text-white text-sm">' + escapeHtml(node.text) + '</span>' + notesHtml + '</div><button onclick="addChildNode(\'' + node.id + '\'); toggleViewMode();" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-1 rounded-lg transition cursor-pointer"><i class="fa-solid fa-plus mr-1"></i>Sub-branch</button>';
 
             const wrapper = document.createElement('div');
             wrapper.appendChild(div);
