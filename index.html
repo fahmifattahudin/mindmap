@@ -443,7 +443,7 @@
 
         function setupPanAndZoom() {
             visualWorkspace.onmousedown = (e) => {
-                if (e.target !== visualWorkspace && e.target !== transformContainer && e.target !== connectionsLayer) return;
+                if (e.target !== visualWorkspace && e.target !== transformContainer && e.target !== connectionsLayer && e.target.tagName !== 'svg') return;
                 isPanning = true;
                 startX = e.clientX - panX;
                 startY = e.clientY - panY;
@@ -539,14 +539,14 @@
             const parentNode = mindMapData.nodes.find(n => n.id === parentId);
             const newId = 'node-' + Date.now();
             
-            // Hitung jumlah anak yang sudah dimiliki parent ini agar posisi vertikalnya otomatis tersebar
+            // Hitung jumlah anak agar posisi vertikalnya menyebar ke atas dan bawah dengan jarak aman (110px)
             const existingChildren = mindMapData.nodes.filter(n => n.parent === parentId);
             const childIndex = existingChildren.length;
 
             const newX = parentNode ? parentNode.x + 280 : 2300;
-            // Menyebar posisi Y ke bawah secara otomatis berdasarkan urutan anak
             const baseY = parentNode ? parentNode.y : 2300;
-            const verticalOffset = (childIndex - 0.5) * 90; 
+            // Jarak vertikal diperlebar menjadi 110px per node agar tidak bertumpuk
+            const verticalOffset = (childIndex - (existingChildren.length / 2)) * 110; 
             const newY = baseY + verticalOffset;
 
             const colors = ['#4f46e5', '#0ea5e9', '#10b981', '#f59e0b', '#8b5cf6'];
@@ -812,7 +812,7 @@
         }
 
         function escapeHtml(text) {
-            const map = { '&': '&', '<': '<', '>': '>', '"': '"', "'": ''' };
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
             return text.replace(/[&<>"']/g, function(m) { return map[m]; });
         }
     </script>
