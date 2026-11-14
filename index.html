@@ -388,11 +388,9 @@
                 };
                 row.appendChild(leftDiv);
 
-                // Right actions (Rename & Delete)
                 const rightActions = document.createElement('div');
                 rightActions.className = "flex items-center space-x-1 ml-2";
 
-                // Rename Button
                 const renameBtn = document.createElement('button');
                 renameBtn.className = "text-slate-400 hover:text-indigo-300 p-1 rounded transition cursor-pointer";
                 renameBtn.title = "Rename Mind Map";
@@ -403,7 +401,6 @@
                 };
                 rightActions.appendChild(renameBtn);
 
-                // Delete Button
                 if (list.length > 1) {
                     const delBtn = document.createElement('button');
                     delBtn.className = "text-slate-400 hover:text-red-400 p-1 rounded transition cursor-pointer";
@@ -469,14 +466,12 @@
             loadMapList();
         }
 
-        // NEW: Feature to rename a mind map directly from dropdown list
         function renameMap(mapId, oldTitle) {
             const newTitle = prompt("Enter new title for this Mind Map:", oldTitle);
             if (!newTitle || !newTitle.trim()) return;
 
             const trimmedTitle = newTitle.trim();
 
-            // Update list
             let list = getSavedMapList();
             let found = list.find(item => item.id === mapId);
             if (found) {
@@ -484,13 +479,11 @@
                 saveMapList(list);
             }
 
-            // If it's the active map, update its internal title and input field too
             if (mapId === currentMapId) {
                 mindMapData.title = trimmedTitle;
                 document.getElementById('mapTitle').value = trimmedTitle;
                 saveToLocalStorage();
             } else {
-                // Update inside its saved storage data
                 const savedData = localStorage.getItem('mindmap_data_' + mapId);
                 if (savedData) {
                     try {
@@ -918,37 +911,62 @@
             render();
         }
 
+        // PERBAIKAN UTAMA: Algoritma Auto-Layout anti-tumpang tindih (Non-overlapping)
         function autoLayout(type) {
-            const root = mindMapData.nodes.find(function(n) { return n.id === 'root'; }) || mindMapData.nodes[0];
-            if (!root) return;
+            const roots = mindMapData.nodes.filter(function(n) { return !n.parent || n.parent === 'root' && n.id === 'root'; });
+            if (roots.length === 0) return;
+            const root = roots[0];
 
             root.x = 2300;
             root.y = 2300;
 
             const children = mindMapData.nodes.filter(function(n) { return n.parent === root.id; });
-            
+
             if (type === 'tree') {
-                let startY = root.y - (children.length * 90) / 2;
-                children.forEach(function(child, index) {
-                    child.x = root.x + 300;
-                    child.y = startY + (index * 120);
+                let currentY = root.y - ((children.length - 1) * 140) / 2;
+                
+                children.forEach(function(child) {
+                    child.x = root.x + 320;
+                    child.y = currentY;
+
                     const grandChildren = mindMapData.nodes.filter(function(n) { return n.parent === child.id; });
-                    grandChildren.forEach(function(gc, gIndex) {
-                        gc.x = child.x + 280;
-                        gc.y = child.y + ((gIndex - (grandChildren.length-1)/2) * 80);
-                    });
+                    if (grandChildren.length > 0) {
+                        let gcY = child.y - ((grandChildren.length - 1) * 90) / 2;
+                        grandChildren.forEach(function(gc) {
+                            gc.x = child.x + 300;
+                            gc.y = gcY;
+                            gcY += 90;
+                        });
+                        currentY = Math.max(currentY + 140, gcY - 50);
+                    } else {
+                        currentY += 140;
+                    }
                 });
             } else if (type === 'fishbone') {
                 children.forEach(function(child, index) {
                     const side = index % 2 === 0 ? -1 : 1;
-                    child.x = root.x + ((index + 1) * 220);
+                    child.x = root.x + ((index + 1) * 240);
                     child.y = root.y + (side * 180);
+
+                    const grandChildren = mindMapData.nodes.filter(function(n) { return n.parent === child.id; });
+                    grandChildren.forEach(function(gc, gIdx) {
+                        gc.x = child.x + ((gIdx + 1) * 180);
+                        gc.y = child.y + (side * 110);
+                    });
                 });
             } else {
+                // Free / Radial Layout
                 children.forEach(function(child, index) {
                     const angle = (index / children.length) * 2 * Math.PI;
-                    child.x = root.x + Math.cos(angle) * 320;
-                    child.y = root.y + Math.sin(angle) * 320;
+                    child.x = root.x + Math.cos(angle) * 360;
+                    child.y = root.y + Math.sin(angle) * 360;
+
+                    const grandChildren = mindMapData.nodes.filter(function(n) { return n.parent === child.id; });
+                    grandChildren.forEach(function(gc, gIdx) {
+                        const subAngle = angle + ((gIdx - (grandChildren.length - 1) / 2) * 0.3);
+                        gc.x = child.x + Math.cos(subAngle) * 260;
+                        gc.y = child.y + Math.sin(subAngle) * 260;
+                    });
                 });
             }
             render();
