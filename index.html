@@ -921,51 +921,65 @@
             root.y = 2300;
 
             const children = mindMapData.nodes.filter(function(n) { return n.parent === root.id; });
+            if (children.length === 0) { render(); return; }
 
             if (type === 'tree') {
-                let currentY = root.y - ((children.length - 1) * 140) / 2;
-                
+                // Hitung total tinggi yang dibutuhkan berdasarkan jumlah cucu di setiap cabang
+                let totalSlots = 0;
                 children.forEach(function(child) {
-                    child.x = root.x + 320;
-                    child.y = currentY;
-
-                    const grandChildren = mindMapData.nodes.filter(function(n) { return n.parent === child.id; });
-                    if (grandChildren.length > 0) {
-                        let gcY = child.y - ((grandChildren.length - 1) * 90) / 2;
-                        grandChildren.forEach(function(gc) {
-                            gc.x = child.x + 300;
-                            gc.y = gcY;
-                            gcY += 90;
-                        });
-                        currentY = Math.max(currentY + 140, gcY - 50);
-                    } else {
-                        currentY += 140;
-                    }
+                    const gcs = mindMapData.nodes.filter(function(n) { return n.parent === child.id; });
+                    totalSlots += Math.max(1, gcs.length);
                 });
+
+                let currentY = root.y - (totalSlots * 110) / 2;
+
+                children.forEach(function(child) {
+                    const grandChildren = mindMapData.nodes.filter(function(n) { return n.parent === child.id; });
+                    const subSlots = Math.max(1, grandChildren.length);
+                    const blockHeight = subSlots * 110;
+
+                    // Posisikan anak tepat di tengah blok ruang miliknya
+                    child.x = root.x + 350;
+                    child.y = currentY + (blockHeight / 2) - 40;
+
+                    if (grandChildren.length > 0) {
+                        let gcY = currentY;
+                        grandChildren.forEach(function(gc) {
+                            gc.x = child.x + 320;
+                            gc.y = gcY + 15;
+                            gcY += 110;
+                        });
+                    }
+                    currentY += blockHeight + 30; // Beri jarak aman antar cabang
+                });
+
             } else if (type === 'fishbone') {
+                let leftY = root.y - 180;
+                let rightY = root.y + 180;
+
                 children.forEach(function(child, index) {
                     const side = index % 2 === 0 ? -1 : 1;
-                    child.x = root.x + ((index + 1) * 240);
-                    child.y = root.y + (side * 180);
+                    child.x = root.x + ((Math.floor(index / 2) + 1) * 260);
+                    child.y = root.y + (side * 200);
 
                     const grandChildren = mindMapData.nodes.filter(function(n) { return n.parent === child.id; });
                     grandChildren.forEach(function(gc, gIdx) {
-                        gc.x = child.x + ((gIdx + 1) * 180);
-                        gc.y = child.y + (side * 110);
+                        gc.x = child.x + ((gIdx + 1) * 200);
+                        gc.y = child.y + (side * 120);
                     });
                 });
             } else {
-                // Free / Radial Layout
+                // Free / Radial Layout (Melingkar menyebar luas)
                 children.forEach(function(child, index) {
                     const angle = (index / children.length) * 2 * Math.PI;
-                    child.x = root.x + Math.cos(angle) * 360;
-                    child.y = root.y + Math.sin(angle) * 360;
+                    child.x = root.x + Math.cos(angle) * 400;
+                    child.y = root.y + Math.sin(angle) * 400;
 
                     const grandChildren = mindMapData.nodes.filter(function(n) { return n.parent === child.id; });
                     grandChildren.forEach(function(gc, gIdx) {
-                        const subAngle = angle + ((gIdx - (grandChildren.length - 1) / 2) * 0.3);
-                        gc.x = child.x + Math.cos(subAngle) * 260;
-                        gc.y = child.y + Math.sin(subAngle) * 260;
+                        const subAngle = angle + ((gIdx - (grandChildren.length - 1) / 2) * 0.35);
+                        gc.x = child.x + Math.cos(subAngle) * 300;
+                        gc.y = child.y + Math.sin(subAngle) * 300;
                     });
                 });
             }
