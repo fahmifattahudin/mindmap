@@ -1,1623 +1,820 @@
 <!DOCTYPE html>
-
 <html lang="en">
-
 <head>
-
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>MindMap Pro - Ultimate Edition</title>
-
     <!-- Tailwind CSS for modern styling -->
-
     <script src="https://cdn.tailwindcss.com"></script>
-
     <!-- FontAwesome for icons -->
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
     <!-- html2canvas for image export feature -->
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
     <style>
-
         body {
-
             overflow: hidden;
-
             background-color: #0f172a;
-
             color: #f8fafc;
-
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-
         }
-
         .canvas-bg {
-
             background-image: radial-gradient(#334155 1px, transparent 1px);
-
             background-size: 24px 24px;
-
         }
-
         .node-card {
-
             transition: box-shadow 0.2s, border-color 0.2s;
-
             pointer-events: auto !important;
-
         }
-
         .node-card:hover {
-
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
-
         }
-
         /* Custom scrollbar */
-
         ::-webkit-scrollbar {
-
             width: 6px;
-
             height: 6px;
-
         }
-
         ::-webkit-scrollbar-track {
-
             background: #1e293b;
-
         }
-
         ::-webkit-scrollbar-thumb {
-
             background: #475569;
-
             border-radius: 3px;
-
         }
-
     </style>
-
 </head>
-
 <body class="w-screen h-screen flex flex-col select-none">
 
-
-
     <!-- Top Navigation Bar -->
-
     <header class="h-14 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 z-40 shrink-0">
-
         <div class="flex items-center space-x-3">
-
             <div class="bg-indigo-600 text-white p-2 rounded-lg flex items-center justify-center shadow-md">
-
                 <i class="fa-solid fa-brain text-lg"></i>
-
             </div>
-
             <div>
-
                 <input type="text" id="mapTitle" value="My Main Idea" class="bg-transparent font-bold text-lg text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 rounded px-1 w-48 sm:w-64">
-
                 <span class="text-xs text-slate-400 block -mt-1">Auto-saved in browser</span>
-
             </div>
-
         </div>
-
-
 
         <!-- Center Toolbar Menu -->
-
         <div class="hidden md:flex items-center space-x-1 bg-slate-800/80 p-1 rounded-xl border border-slate-700/60">
-
             <button onclick="zoomIn()" title="Zoom In" class="px-3 py-1.5 hover:bg-slate-700 rounded-lg text-slate-300 hover:text-white transition cursor-pointer"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
-
             <button onclick="resetZoom()" title="Reset Zoom" class="px-3 py-1.5 hover:bg-slate-700 rounded-lg text-slate-300 hover:text-white transition text-xs font-semibold cursor-pointer">100%</button>
-
             <button onclick="zoomOut()" title="Zoom Out" class="px-3 py-1.5 hover:bg-slate-700 rounded-lg text-slate-300 hover:text-white transition cursor-pointer"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
-
             <div class="h-4 w-px bg-slate-700 mx-1"></div>
-
             <button onclick="autoLayout('free')" title="Free Layout" class="px-3 py-1.5 hover:bg-slate-700 rounded-lg text-slate-300 hover:text-white transition text-xs font-medium cursor-pointer"><i class="fa-solid fa-shuffle mr-1"></i>Free</button>
-
             <button onclick="autoLayout('tree')" title="Tree Layout" class="px-3 py-1.5 hover:bg-slate-700 rounded-lg text-slate-300 hover:text-white transition text-xs font-medium cursor-pointer"><i class="fa-solid fa-sitemap mr-1"></i>Tree</button>
-
             <button onclick="autoLayout('fishbone')" title="Fishbone Layout" class="px-3 py-1.5 hover:bg-slate-700 rounded-lg text-slate-300 hover:text-white transition text-xs font-medium cursor-pointer"><i class="fa-solid fa-fish mr-1"></i>Fishbone</button>
-
         </div>
-
-
 
         <!-- Right Action Buttons -->
-
         <div class="flex items-center space-x-2">
-
             <button onclick="toggleViewMode()" id="viewModeBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-sm font-medium border border-slate-700 transition flex items-center space-x-1.5 cursor-pointer">
-
                 <i class="fa-solid fa-list-ul"></i>
-
                 <span class="hidden sm:inline">Outline</span>
-
             </button>
-
             <button onclick="openAIAssistant()" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium shadow-md transition flex items-center space-x-1.5 cursor-pointer">
-
                 <i class="fa-solid fa-wand-magic-sparkles"></i>
-
                 <span class="hidden sm:inline">AI Brainstorm</span>
-
             </button>
-
             <button onclick="openExportModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-sm font-medium border border-slate-700 transition flex items-center space-x-1.5 cursor-pointer">
-
                 <i class="fa-solid fa-download"></i>
-
                 <span class="hidden sm:inline">Export</span>
-
             </button>
-
             <button onclick="startPresentation()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition flex items-center space-x-1.5 shadow-md cursor-pointer">
-
                 <i class="fa-solid fa-play"></i>
-
                 <span class="hidden sm:inline">Present</span>
-
             </button>
-
         </div>
-
     </header>
 
-
-
     <!-- Main Workspace -->
-
     <div class="flex-1 relative overflow-hidden flex">
 
-
-
         <!-- Visual Canvas View -->
-
         <div id="visualWorkspace" class="flex-1 h-full relative canvas-bg cursor-grab active:cursor-grabbing">
-
             <div id="transformContainer" class="absolute top-0 left-0 w-[5000px] h-[5000px] origin-top-left pointer-events-none">
-
                 <!-- SVG Connections Layer -->
-
                 <svg id="connectionsLayer" class="absolute top-0 left-0 w-full h-full pointer-events-none z-0"></svg>
-
                 <!-- Nodes Layer -->
-
                 <div id="nodesContainer" class="absolute top-0 left-0 w-full h-full pointer-events-auto z-20"></div>
-
             </div>
-
-
 
             <!-- Floating Hint / Instructions -->
-
             <div class="absolute bottom-4 left-4 bg-slate-900/90 backdrop-blur border border-slate-700 p-3 rounded-xl shadow-xl text-xs text-slate-400 z-30 pointer-events-none max-w-xs">
-
                 <p class="font-semibold text-slate-200 mb-1"><i class="fa-solid fa-circle-info text-indigo-400 mr-1.5"></i>Quick Guide:</p>
-
                 <p>• Click node to edit / add branch.</p>
-
                 <p>• Pan canvas with click & drag background.</p>
-
                 <p>• Use mouse scroll to Zoom In/Out.</p>
-
             </div>
-
         </div>
-
-
 
         <!-- Outline / Hierarchy View (Hidden by default) -->
-
         <div id="outlineWorkspace" class="hidden flex-1 h-full bg-slate-900 p-6 overflow-y-auto z-30">
-
             <div class="max-w-3xl mx-auto">
-
                 <div class="flex justify-between items-center mb-6">
-
                     <h2 class="text-xl font-bold text-white"><i class="fa-solid fa-list-tree mr-2 text-indigo-400"></i>Mind Map Outline & Hierarchy</h2>
-
                     <button onclick="addNewRootNode()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow cursor-pointer">
-
                         <i class="fa-solid fa-plus mr-1.5"></i>Add Root Node
-
                     </button>
-
                 </div>
-
                 <div id="outlineContent" class="space-y-3">
-
                     <!-- Dynamically populated from Javascript -->
-
                 </div>
-
             </div>
-
         </div>
-
-
 
         <!-- Side Inspector / Detail Panel -->
-
         <div id="inspectorPanel" class="w-80 bg-slate-900 border-l border-slate-800 flex flex-col z-40 transition-all duration-300 transform translate-x-full absolute right-0 top-0 h-full shadow-2xl">
-
             <div class="p-4 border-b border-slate-800 flex items-center justify-between">
-
                 <h3 class="font-bold text-white flex items-center"><i class="fa-solid fa-sliders mr-2 text-indigo-400"></i>Node Settings</h3>
-
                 <button onclick="closeInspector()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 cursor-pointer"><i class="fa-solid fa-xmark text-lg"></i></button>
-
             </div>
-
             <div class="p-4 space-y-4 flex-1 overflow-y-auto">
-
                 <input type="hidden" id="inspectNodeId">
-
                 <div>
-
                     <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Node Text</label>
-
                     <input type="text" id="inspectText" oninput="updateActiveNodeText(this.value)" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500">
-
                 </div>
-
                 <div>
-
                     <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Notes & Description</label>
-
                     <textarea id="inspectNotes" rows="3" oninput="updateActiveNodeNotes(this.value)" placeholder="Add notes or details..." class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 resize-none"></textarea>
-
                 </div>
-
                 <div class="grid grid-cols-2 gap-3">
-
                     <div>
-
                         <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Node Shape</label>
-
-                        <select id="inspectShape" onchange="updateActiveNodeShape(this.value)" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 cursor-pointer">
-
+                        <select id="inspectShape" onchange="updateActiveNodeShape(this.value)" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500">
                             <option value="rounded">Rounded Box</option>
-
                             <option value="pill">Pill / Capsule</option>
-
                             <option value="circle">Circle</option>
-
                             <option value="cloud">Cloud</option>
-
                         </select>
-
                     </div>
-
                     <div>
-
                         <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Priority</label>
-
-                        <select id="inspectPriority" onchange="updateActiveNodePriority(this.value)" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 cursor-pointer">
-
+                        <select id="inspectPriority" onchange="updateActiveNodePriority(this.value)" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500">
                             <option value="normal">Normal</option>
-
                             <option value="high">High (🔴)</option>
-
                             <option value="medium">Medium (🟡)</option>
-
                             <option value="low">Low (🟢)</option>
-
                         </select>
-
                     </div>
-
                 </div>
-
                 <div>
-
                     <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Node Background Color</label>
-
                     <div class="flex space-x-2">
-
                         <button onclick="updateActiveNodeColor('#4f46e5')" class="w-8 h-8 rounded-full bg-indigo-600 hover:scale-110 transition border-2 border-slate-700 cursor-pointer"></button>
-
                         <button onclick="updateActiveNodeColor('#0ea5e9')" class="w-8 h-8 rounded-full bg-sky-500 hover:scale-110 transition border-2 border-slate-700 cursor-pointer"></button>
-
                         <button onclick="updateActiveNodeColor('#10b981')" class="w-8 h-8 rounded-full bg-emerald-500 hover:scale-110 transition border-2 border-slate-700 cursor-pointer"></button>
-
                         <button onclick="updateActiveNodeColor('#f59e0b')" class="w-8 h-8 rounded-full bg-amber-500 hover:scale-110 transition border-2 border-slate-700 cursor-pointer"></button>
-
                         <button onclick="updateActiveNodeColor('#ef4444')" class="w-8 h-8 rounded-full bg-red-500 hover:scale-110 transition border-2 border-slate-700 cursor-pointer"></button>
-
                         <button onclick="updateActiveNodeColor('#8b5cf6')" class="w-8 h-8 rounded-full bg-purple-500 hover:scale-110 transition border-2 border-slate-700 cursor-pointer"></button>
-
                     </div>
-
                 </div>
-
                 <div>
-
                     <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Connection Line Style</label>
-
-                    <select id="inspectLineStyle" onchange="updateActiveLineStyle(this.value)" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 cursor-pointer">
-
+                    <select id="inspectLineStyle" onchange="updateActiveLineStyle(this.value)" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500">
                         <option value="bezier">Smooth Curved</option>
-
                         <option value="straight">Straight Line</option>
-
                         <option value="orthogonal">Orthogonal</option>
-
                     </select>
-
                 </div>
-
                 <div class="pt-4 border-t border-slate-800 space-y-2">
-
                     <button onclick="addChildNodeFromInspector()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded-lg text-sm font-medium transition shadow flex items-center justify-center space-x-2 cursor-pointer">
-
                         <i class="fa-solid fa-sitemap"></i><span>Add Sub-Branch</span>
-
                     </button>
-
                     <button onclick="deleteActiveNode()" class="w-full bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white py-2 rounded-lg text-sm font-medium transition flex items-center justify-center space-x-2 border border-red-600/30 cursor-pointer">
-
                         <i class="fa-solid fa-trash"></i><span>Delete This Node</span>
-
                     </button>
-
                 </div>
-
             </div>
-
         </div>
-
     </div>
-
-
 
     <!-- AI Brainstorm Modal -->
-
     <div id="aiModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
-
         <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
-
             <div class="bg-gradient-to-r from-purple-900/50 to-indigo-900/50 p-4 border-b border-slate-800 flex items-center justify-between">
-
                 <h3 class="font-bold text-white flex items-center"><i class="fa-solid fa-wand-magic-sparkles mr-2 text-purple-400"></i>AI Brainstorm Helper</h3>
-
                 <button onclick="closeAIModal()" class="text-slate-400 hover:text-white cursor-pointer"><i class="fa-solid fa-xmark text-lg"></i></button>
-
             </div>
-
             <div class="p-6 space-y-4">
-
                 <div>
-
                     <label class="block text-sm font-medium text-slate-300 mb-1">Topic or Prompt for AI:</label>
-
                     <input type="text" id="aiPromptInput" placeholder="E.g., Digital Marketing Strategy for Startups..." class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500">
-
                 </div>
-
                 <div class="bg-purple-950/30 border border-purple-800/30 p-3 rounded-xl text-xs text-purple-300">
-
                     <i class="fa-solid fa-lightbulb mr-1.5 text-purple-400"></i>AI will automatically generate a structured idea branch directly added to your Mind Map.
-
                 </div>
-
                 <div class="flex justify-end space-x-3 pt-2">
-
                     <button onclick="closeAIModal()" class="px-4 py-2 rounded-lg text-slate-300 hover:bg-slate-800 text-sm font-medium transition cursor-pointer">Cancel</button>
-
                     <button onclick="generateAIIdeas()" id="aiSubmitBtn" class="bg-purple-600 hover:bg-purple-500 text-white px-5 py-2 rounded-lg text-sm font-medium transition shadow-md flex items-center space-x-2 cursor-pointer">
-
                         <i class="fa-solid fa-bolt"></i><span>Generate Ideas</span>
-
                     </button>
-
                 </div>
-
             </div>
-
         </div>
-
     </div>
-
-
 
     <!-- Export Modal -->
-
     <div id="exportModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
-
         <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
-
             <div class="p-4 border-b border-slate-800 flex items-center justify-between">
-
                 <h3 class="font-bold text-white flex items-center"><i class="fa-solid fa-download mr-2 text-indigo-400"></i>Export Mind Map</h3>
-
                 <button onclick="closeExportModal()" class="text-slate-400 hover:text-white cursor-pointer"><i class="fa-solid fa-xmark text-lg"></i></button>
-
             </div>
-
             <div class="p-6 space-y-3">
-
                 <button onclick="exportToImage('png')" class="w-full bg-slate-800 hover:bg-slate-700 p-3.5 rounded-xl border border-slate-700 text-left transition flex items-center space-x-3 cursor-pointer">
-
                     <div class="bg-indigo-600/20 text-indigo-400 p-2.5 rounded-lg"><i class="fa-solid fa-file-image text-lg"></i></div>
-
                     <div>
-
                         <div class="font-semibold text-white text-sm">Download as Image (PNG)</div>
-
                         <div class="text-xs text-slate-400">High quality for presentations or sharing</div>
-
                     </div>
-
                 </button>
-
                 <button onclick="exportToJSON()" class="w-full bg-slate-800 hover:bg-slate-700 p-3.5 rounded-xl border border-slate-700 text-left transition flex items-center space-x-3 cursor-pointer">
-
                     <div class="bg-emerald-600/20 text-emerald-400 p-2.5 rounded-lg"><i class="fa-solid fa-file-code text-lg"></i></div>
-
                     <div>
-
                         <div class="font-semibold text-white text-sm">Backup File (JSON)</div>
-
                         <div class="text-xs text-slate-400">Save file to edit again later</div>
-
                     </div>
-
                 </button>
-
             </div>
-
         </div>
-
     </div>
-
-
 
     <!-- Presentation Mode Overlay -->
-
     <div id="presentationOverlay" class="fixed inset-0 bg-slate-950/95 z-50 hidden flex-col items-center justify-between p-8">
-
         <div class="w-full max-w-4xl flex justify-between items-center">
-
             <div class="flex items-center space-x-2 text-indigo-400 font-bold"><i class="fa-solid fa-person-chalkboard"></i><span>Presentation Mode</span></div>
-
             <button onclick="stopPresentation()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition cursor-pointer"><i class="fa-solid fa-xmark mr-1.5"></i>Exit</button>
-
         </div>
-
         <div class="max-w-2xl text-center space-y-6 my-auto">
-
             <div id="presNodePriority" class="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-indigo-600/30 text-indigo-300 border border-indigo-500/30"></div>
-
             <h1 id="presNodeTitle" class="text-4xl sm:text-5xl font-extrabold text-white tracking-tight"></h1>
-
             <p id="presNodeNotes" class="text-lg text-slate-300 leading-relaxed"></p>
-
         </div>
-
         <div class="w-full max-w-md flex justify-between items-center bg-slate-900 border border-slate-800 p-3 rounded-2xl">
-
             <button onclick="prevPresStep()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition cursor-pointer"><i class="fa-solid fa-chevron-left mr-1"></i>Previous</button>
-
             <span id="presCounter" class="text-sm font-semibold text-slate-400">1 / 1</span>
-
             <button onclick="nextPresStep()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-medium transition cursor-pointer">Next<i class="fa-solid fa-chevron-right ml-1"></i></button>
-
         </div>
-
     </div>
 
-
-
     <!-- Main JavaScript Application -->
-
     <script>
-
         let mindMapData = {
-
             title: "My Main Idea",
-
             nodes: [
-
                 { id: "root", text: "Main Idea", x: 2300, y: 2300, color: "#4f46e5", shape: "rounded", notes: "Central idea of this mind map.", priority: "normal", lineStyle: "bezier", parent: null },
-
                 { id: "child-1", text: "Market Research", x: 2000, y: 2100, color: "#0ea5e9", shape: "rounded", notes: "Competitor analysis and target audience.", priority: "high", lineStyle: "bezier", parent: "root" },
-
                 { id: "child-2", text: "App Features", x: 2600, y: 2100, color: "#10b981", shape: "rounded", notes: "List of key features to develop.", priority: "medium", lineStyle: "bezier", parent: "root" },
-
                 { id: "child-3", text: "Monetization", x: 2000, y: 2500, color: "#f59e0b", shape: "rounded", notes: "Revenue models and sponsorships.", priority: "normal", lineStyle: "bezier", parent: "root" }
-
             ]
-
         };
-
-
 
         let scale = 1;
-
         let panX = 0, panY = 0;
-
         let isPanning = false;
-
         let startX = 0, startY = 0;
-
         let activeNodeId = null;
-
         let isOutlineView = false;
-
         let presentationNodes = [];
-
         let currentPresIndex = 0;
 
-
-
         const visualWorkspace = document.getElementById('visualWorkspace');
-
         const transformContainer = document.getElementById('transformContainer');
-
         const nodesContainer = document.getElementById('nodesContainer');
-
         const connectionsLayer = document.getElementById('connectionsLayer');
-
         const inspectorPanel = document.getElementById('inspectorPanel');
 
-
-
         window.onload = function() {
-
             loadFromLocalStorage();
-
             render();
-
             setupPanAndZoom();
-
             centerCanvas();
-
         };
 
-
-
         function centerCanvas() {
-
             const rootNode = mindMapData.nodes.find(n => n.id === 'root') || mindMapData.nodes[0];
-
             if (rootNode) {
-
                 panX = (visualWorkspace.clientWidth / 2) - rootNode.x;
-
                 panY = (visualWorkspace.clientHeight / 2) - rootNode.y;
-
                 updateTransform();
-
             }
-
         }
-
-
 
         function saveToLocalStorage() {
-
             mindMapData.title = document.getElementById('mapTitle').value;
-
             localStorage.setItem('mindmap_ultimate_data', JSON.stringify(mindMapData));
-
         }
-
-
 
         function loadFromLocalStorage() {
-
             const saved = localStorage.getItem('mindmap_ultimate_data');
-
             if (saved) {
-
                 try {
-
                     mindMapData = JSON.parse(saved);
-
                     document.getElementById('mapTitle').value = mindMapData.title || "My Main Idea";
-
                 } catch(e) { console.error(e); }
-
             }
-
         }
-
-
 
         function render() {
-
             nodesContainer.innerHTML = '';
-
             connectionsLayer.innerHTML = '';
 
-
-
             mindMapData.nodes.forEach(node => {
-
                 if (node.parent) {
-
                     const parentNode = mindMapData.nodes.find(n => n.id === node.parent);
-
                     if (parentNode) {
-
                         drawConnection(parentNode, node, node.lineStyle || 'bezier');
-
                     }
-
                 }
-
             });
 
-
-
             mindMapData.nodes.forEach(node => {
-
                 const el = document.createElement('div');
-
                 el.className = `absolute pointer-events-auto node-card cursor-pointer flex items-center shadow-xl p-3.5 select-none transition-all`;
-
                 el.style.left = `${node.x}px`;
-
                 el.style.top = `${node.y}px`;
-
                 el.style.backgroundColor = node.color;
-
                 el.style.color = '#ffffff';
-
                 el.style.minWidth = '150px';
-
                 el.style.maxWidth = '240px';
 
-
-
                 if (node.shape === 'pill') el.style.borderRadius = '9999px';
-
                 else if (node.shape === 'circle') {
-
                     el.style.borderRadius = '50%';
-
                     el.style.width = '120px';
-
                     el.style.height = '120px';
-
                     el.style.justifyContent = 'center';
-
                     el.style.textAlign = 'center';
-
                 } else if (node.shape === 'cloud') el.style.borderRadius = '2rem';
-
                 else el.style.borderRadius = '0.75rem';
 
-
-
                 if (node.id === activeNodeId) {
-
                     el.style.boxShadow = '0 0 0 4px rgba(255, 255, 255, 0.8), 0 10px 25px -5px rgba(0,0,0,0.4)';
-
                 }
 
-
-
                 let priorityBadge = '';
-
                 if (node.priority === 'high') priorityBadge = '<span class="ml-2 text-xs bg-red-900/60 text-red-200 px-1.5 py-0.5 rounded">🔴 High</span>';
-
                 if (node.priority === 'medium') priorityBadge = '<span class="ml-2 text-xs bg-amber-900/60 text-amber-200 px-1.5 py-0.5 rounded">🟡 Med</span>';
-
                 if (node.priority === 'low') priorityBadge = '<span class="ml-2 text-xs bg-emerald-900/60 text-emerald-200 px-1.5 py-0.5 rounded">🟢 Low</span>';
 
-
-
                 el.innerHTML = `
-
                     <div class="flex-1 overflow-hidden">
-
                         <div class="font-bold text-sm truncate flex items-center justify-between">
-
                             <span>${escapeHtml(node.text)}</span>
-
                             ${priorityBadge}
-
                         </div>
-
                         ${node.notes ? `<div class="text-xs opacity-80 truncate mt-0.5">${escapeHtml(node.notes)}</div>` : ''}
-
                     </div>
-
                     <button onclick="event.stopPropagation(); addChildNode('${node.id}')" class="ml-2 w-6 h-6 bg-black/20 hover:bg-black/40 rounded-full flex items-center justify-center text-white text-xs transition shrink-0 cursor-pointer" title="Add Branch">
-
                         <i class="fa-solid fa-plus"></i>
-
                     </button>
-
                 `;
 
-
-
                 let isDraggingNode = false;
-
                 let startMouseX, startMouseY;
 
-
-
                 el.onmousedown = (e) => {
-
                     if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
-
                     isDraggingNode = true;
-
                     startMouseX = e.clientX;
-
                     startMouseY = e.clientY;
-
                     selectNode(node.id);
-
                     e.stopPropagation();
-
                 };
-
-
 
                 window.addEventListener('mousemove', (e) => {
-
                     if (!isDraggingNode) return;
-
                     const dx = (e.clientX - startMouseX) / scale;
-
                     const dy = (e.clientY - startMouseY) / scale;
-
                     node.x += dx;
-
                     node.y += dy;
-
                     startMouseX = e.clientX;
-
                     startMouseY = e.clientY;
-
                     render();
-
                 });
-
-
 
                 window.addEventListener('mouseup', () => {
-
                     if (isDraggingNode) {
-
                         isDraggingNode = false;
-
                         saveToLocalStorage();
-
                     }
-
                 });
 
-
-
                 el.onclick = (e) => {
-
                     e.stopPropagation();
-
                     selectNode(node.id);
-
                 };
 
-
-
                 nodesContainer.appendChild(el);
-
             });
-
-
 
             if (isOutlineView) renderOutline();
-
             saveToLocalStorage();
-
         }
-
-
 
         function drawConnection(p1, p2, style) {
-
             const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-
             const x1 = p1.x + 90;
-
             const y1 = p1.y + 30;
-
             const x2 = p2.x + 90;
-
             const y2 = p2.y + 30;
 
-
-
             let d = '';
-
             if (style === 'straight') {
-
                 d = `M ${x1} ${y1} L ${x2} ${y2}`;
-
             } else if (style === 'orthogonal') {
-
                 const midX = (x1 + x2) / 2;
-
                 d = `M ${x1} ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}`;
-
             } else {
-
                 const dx = Math.abs(x2 - x1) * 0.5;
-
                 d = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
-
             }
 
-
-
             line.setAttribute('d', d);
-
             line.setAttribute('stroke', p2.color || '#6366f1');
-
             line.setAttribute('stroke-width', '3');
-
             line.setAttribute('fill', 'none');
-
             line.setAttribute('stroke-linecap', 'round');
-
             connectionsLayer.appendChild(line);
-
         }
 
-
-
         function setupPanAndZoom() {
-
             visualWorkspace.onmousedown = (e) => {
-
                 if (e.target !== visualWorkspace && e.target !== transformContainer && e.target !== connectionsLayer) return;
-
                 isPanning = true;
-
                 startX = e.clientX - panX;
-
                 startY = e.clientY - panY;
-
             };
 
-
-
             window.addEventListener('mousemove', (e) => {
-
                 if (!isPanning) return;
-
                 panX = e.clientX - startX;
-
                 panY = e.clientY - startY;
-
                 updateTransform();
-
             });
-
-
 
             window.addEventListener('mouseup', () => { isPanning = false; });
 
-
-
             visualWorkspace.addEventListener('wheel', (e) => {
-
                 e.preventDefault();
-
                 const zoomFactor = 1.1;
-
                 if (e.deltaY < 0) {
-
                     scale = Math.min(scale * zoomFactor, 2.5);
-
                 } else {
-
                     scale = Math.max(scale / zoomFactor, 0.3);
-
                 }
-
                 updateTransform();
-
             }, { passive: false });
-
         }
-
-
 
         function updateTransform() {
-
             transformContainer.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
-
         }
-
-
 
         function zoomIn() { scale = Math.min(scale * 1.2, 2.5); updateTransform(); }
-
         function zoomOut() { scale = Math.max(scale / 1.2, 0.3); updateTransform(); }
-
         function resetZoom() { scale = 1; centerCanvas(); }
 
-
-
         function selectNode(id) {
-
             activeNodeId = id;
-
             const node = mindMapData.nodes.find(n => n.id === id);
-
             if (node) {
-
                 document.getElementById('inspectNodeId').value = node.id;
-
                 document.getElementById('inspectText').value = node.text;
-
                 document.getElementById('inspectNotes').value = node.notes || '';
-
                 document.getElementById('inspectShape').value = node.shape || 'rounded';
-
                 document.getElementById('inspectPriority').value = node.priority || 'normal';
-
                 document.getElementById('inspectLineStyle').value = node.lineStyle || 'bezier';
-
                 inspectorPanel.classList.remove('translate-x-full');
-
             }
-
             render();
-
         }
-
-
 
         function closeInspector() {
-
             activeNodeId = null;
-
             inspectorPanel.classList.add('translate-x-full');
-
             render();
-
         }
-
-
 
         function updateActiveNodeText(val) {
-
             if (!activeNodeId) return;
-
             const node = mindMapData.nodes.find(n => n.id === activeNodeId);
-
             if (node) { node.text = val; render(); }
-
         }
-
-
 
         function updateActiveNodeNotes(val) {
-
             if (!activeNodeId) return;
-
             const node = mindMapData.nodes.find(n => n.id === activeNodeId);
-
             if (node) { node.notes = val; render(); }
-
         }
-
-
 
         function updateActiveNodeShape(val) {
-
             if (!activeNodeId) return;
-
             const node = mindMapData.nodes.find(n => n.id === activeNodeId);
-
             if (node) { node.shape = val; render(); }
-
         }
-
-
 
         function updateActiveNodePriority(val) {
-
             if (!activeNodeId) return;
-
             const node = mindMapData.nodes.find(n => n.id === activeNodeId);
-
             if (node) { node.priority = val; render(); }
-
         }
-
-
 
         function updateActiveNodeColor(color) {
-
             if (!activeNodeId) return;
-
             const node = mindMapData.nodes.find(n => n.id === activeNodeId);
-
             if (node) { node.color = color; render(); }
-
         }
-
-
 
         function updateActiveLineStyle(val) {
-
             if (!activeNodeId) return;
-
             const node = mindMapData.nodes.find(n => n.id === activeNodeId);
-
             if (node) { node.lineStyle = val; render(); }
-
         }
-
-
 
         function addChildNode(parentId) {
-
             const parentNode = mindMapData.nodes.find(n => n.id === parentId);
-
             const newId = 'node-' + Date.now();
+            
+            // Hitung jumlah anak yang sudah dimiliki parent ini agar posisi vertikalnya otomatis tersebar
+            const existingChildren = mindMapData.nodes.filter(n => n.parent === parentId);
+            const childIndex = existingChildren.length;
 
             const newX = parentNode ? parentNode.x + 280 : 2300;
-
-            const newY = parentNode ? parentNode.y + (Math.random() * 150 - 75) : 2300;
-
-
+            // Menyebar posisi Y ke bawah secara otomatis berdasarkan urutan anak
+            const baseY = parentNode ? parentNode.y : 2300;
+            const verticalOffset = (childIndex - 0.5) * 90; 
+            const newY = baseY + verticalOffset;
 
             const colors = ['#4f46e5', '#0ea5e9', '#10b981', '#f59e0b', '#8b5cf6'];
-
             const randomColor = colors[Math.floor(Math.random() * colors.length)];
 
-
-
             mindMapData.nodes.push({
-
                 id: newId,
-
                 text: "New Branch",
-
                 x: newX,
-
                 y: newY,
-
                 color: randomColor,
-
                 shape: "rounded",
-
                 notes: "",
-
                 priority: "normal",
-
                 lineStyle: "bezier",
-
                 parent: parentId
-
             });
-
-
 
             selectNode(newId);
-
             render();
-
         }
-
-
 
         function addChildNodeFromInspector() {
-
             if (activeNodeId) addChildNode(activeNodeId);
-
         }
-
-
 
         function deleteActiveNode() {
-
             if (!activeNodeId) return;
-
             if (activeNodeId === 'root') {
-
                 alert("Root node cannot be deleted!");
-
                 return;
-
             }
-
             const toDelete = [activeNodeId];
-
             let foundMore = true;
-
             while(foundMore) {
-
                 foundMore = false;
-
                 mindMapData.nodes.forEach(n => {
-
                     if (toDelete.includes(n.parent) && !toDelete.includes(n.id)) {
-
                         toDelete.push(n.id);
-
                         foundMore = true;
-
                     }
-
                 });
-
             }
-
-
 
             mindMapData.nodes = mindMapData.nodes.filter(n => !toDelete.includes(n.id));
-
             closeInspector();
-
             render();
-
         }
-
-
 
         function addNewRootNode() {
-
             const newId = 'node-' + Date.now();
-
             mindMapData.nodes.push({
-
                 id: newId,
-
                 text: "New Topic",
-
                 x: 2300 + (Math.random() * 200),
-
                 y: 2300 + (Math.random() * 200),
-
                 color: "#8b5cf6",
-
                 shape: "rounded",
-
                 notes: "",
-
                 priority: "normal",
-
                 lineStyle: "bezier",
-
                 parent: "root"
-
             });
-
             render();
-
         }
-
-
 
         function autoLayout(type) {
-
             const root = mindMapData.nodes.find(n => n.id === 'root') || mindMapData.nodes[0];
-
             if (!root) return;
 
-
-
             root.x = 2300;
-
             root.y = 2300;
 
-
-
             const children = mindMapData.nodes.filter(n => n.parent === root.id);
-
             
-
             if (type === 'tree') {
-
                 let startY = root.y - (children.length * 90) / 2;
-
                 children.forEach((child, index) => {
-
                     child.x = root.x + 300;
-
                     child.y = startY + (index * 120);
-
                     const grandChildren = mindMapData.nodes.filter(n => n.parent === child.id);
-
                     grandChildren.forEach((gc, gIndex) => {
-
                         gc.x = child.x + 280;
-
                         gc.y = child.y + ((gIndex - (grandChildren.length-1)/2) * 80);
-
                     });
-
                 });
-
             } else if (type === 'fishbone') {
-
                 children.forEach((child, index) => {
-
                     const side = index % 2 === 0 ? -1 : 1;
-
                     child.x = root.x + ((index + 1) * 220);
-
                     child.y = root.y + (side * 180);
-
                 });
-
             } else {
-
                 children.forEach((child, index) => {
-
                     const angle = (index / children.length) * 2 * Math.PI;
-
                     child.x = root.x + Math.cos(angle) * 320;
-
                     child.y = root.y + Math.sin(angle) * 320;
-
                 });
-
             }
-
             render();
-
         }
-
-
 
         function toggleViewMode() {
-
             isOutlineView = !isOutlineView;
-
             const btn = document.getElementById('viewModeBtn');
-
             const visual = document.getElementById('visualWorkspace');
-
             const outline = document.getElementById('outlineWorkspace');
 
-
-
             if (isOutlineView) {
-
                 visual.classList.add('hidden');
-
                 outline.classList.remove('hidden');
-
                 btn.innerHTML = `<i class="fa-solid fa-network-wired"></i><span class="hidden sm:inline ml-1.5">Canvas</span>`;
-
                 renderOutline();
-
             } else {
-
                 outline.classList.add('hidden');
-
                 visual.classList.remove('hidden');
-
                 btn.innerHTML = `<i class="fa-solid fa-list-ul"></i><span class="hidden sm:inline ml-1.5">Outline</span>`;
-
                 render();
-
             }
-
         }
-
-
 
         function renderOutline() {
-
             const container = document.getElementById('outlineContent');
-
             container.innerHTML = '';
-
             
-
             const roots = mindMapData.nodes.filter(n => !n.parent || n.parent === 'root' && n.id === 'root');
-
             roots.forEach(root => {
-
                 container.appendChild(createOutlineItem(root, 0));
-
             });
-
         }
-
-
 
         function createOutlineItem(node, level) {
-
             const div = document.createElement('div');
-
             div.className = `p-3 rounded-xl bg-slate-800 border border-slate-700 ml-${level * 6} flex items-center justify-between shadow-md`;
-
             
-
             div.innerHTML = `
-
                 <div class="flex items-center space-x-3">
-
                     <span class="w-3 h-3 rounded-full" style="background-color: ${node.color}"></span>
-
                     <span class="font-semibold text-white text-sm">${escapeHtml(node.text)}</span>
-
                     ${node.notes ? `<span class="text-xs text-slate-400 italic">(${escapeHtml(node.notes)})</span>` : ''}
-
                 </div>
-
                 <button onclick="addChildNode('${node.id}'); toggleViewMode();" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-1 rounded-lg transition cursor-pointer">
-
                     <i class="fa-solid fa-plus mr-1"></i>Sub-branch
-
                 </button>
-
             `;
 
-
-
             const wrapper = document.createElement('div');
-
             wrapper.appendChild(div);
 
-
-
             const children = mindMapData.nodes.filter(n => n.parent === node.id);
-
             children.forEach(child => {
-
                 wrapper.appendChild(createOutlineItem(child, level + 1));
-
             });
-
-
 
             return wrapper;
-
         }
-
-
 
         function openAIAssistant() { document.getElementById('aiModal').classList.remove('hidden'); document.getElementById('aiModal').classList.add('flex'); }
-
         function closeAIModal() { document.getElementById('aiModal').classList.remove('flex'); document.getElementById('aiModal').classList.add('hidden'); }
 
-
-
         function generateAIIdeas() {
-
             const prompt = document.getElementById('aiPromptInput').value.trim();
-
             if (!prompt) { alert("Please enter a topic first!"); return; }
 
-
-
             const btn = document.getElementById('aiSubmitBtn');
-
             btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1.5"></i>Processing AI...`;
 
-
-
             setTimeout(() => {
-
                 const newId = 'node-' + Date.now();
-
                 mindMapData.nodes.push({
-
                     id: newId,
-
                     text: prompt,
-
                     x: 2300,
-
                     y: 2000,
-
                     color: "#8b5cf6",
-
                     shape: "cloud",
-
                     notes: "AI Brainstorm Result",
-
                     priority: "high",
-
                     lineStyle: "bezier",
-
                     parent: "root"
-
                 });
-
-
 
                 const subIdeas = ["Core Strategy", "Execution Steps", "Risk Analysis", "Target & Metrics"];
-
                 subIdeas.forEach((sub, idx) => {
-
                     mindMapData.nodes.push({
-
                         id: newId + '-' + idx,
-
                         text: sub,
-
                         x: 2300 + ((idx - 1.5) * 200),
-
                         y: 1850,
-
                         color: "#0ea5e9",
-
                         shape: "rounded",
-
                         notes: `Details for ${sub}`,
-
                         priority: "normal",
-
                         lineStyle: "bezier",
-
                         parent: newId
-
                     });
-
                 });
 
-
-
                 btn.innerHTML = `<i class="fa-solid fa-bolt mr-1.5"></i>Generate Ideas`;
-
                 closeAIModal();
-
                 render();
-
                 document.getElementById('aiPromptInput').value = '';
-
             }, 1000);
-
         }
-
-
 
         function openExportModal() { document.getElementById('exportModal').classList.remove('hidden'); document.getElementById('exportModal').classList.add('flex'); }
-
         function closeExportModal() { document.getElementById('exportModal').classList.remove('flex'); document.getElementById('exportModal').classList.add('hidden'); }
 
-
-
         function exportToImage(type) {
-
             closeExportModal();
-
             alert("Preparing mind map image download...");
-
             html2canvas(nodesContainer, { backgroundColor: '#0f172a' }).then(canvas => {
-
                 const link = document.createElement('a');
-
                 link.download = `${document.getElementById('mapTitle').value || 'mindmap'}.${type}`;
-
                 link.href = canvas.toDataURL(`image/${type}`);
-
                 link.click();
-
             });
-
         }
-
-
 
         function exportToJSON() {
-
             closeExportModal();
-
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(mindMapData, null, 2));
-
             const dlAnchor = document.createElement('a');
-
             dlAnchor.setAttribute("href", dataStr);
-
             dlAnchor.setAttribute("download", `${document.getElementById('mapTitle').value || 'mindmap'}.json`);
-
             dlAnchor.click();
-
         }
-
-
 
         function startPresentation() {
-
             presentationNodes = mindMapData.nodes;
-
             if (presentationNodes.length === 0) return;
-
             currentPresIndex = 0;
-
             document.getElementById('presentationOverlay').classList.remove('hidden');
-
             document.getElementById('presentationOverlay').classList.add('flex');
-
             updatePresentationSlide();
-
         }
-
-
 
         function stopPresentation() {
-
             document.getElementById('presentationOverlay').classList.remove('flex');
-
             document.getElementById('presentationOverlay').classList.add('hidden');
-
         }
-
-
 
         function updatePresentationSlide() {
-
             const node = presentationNodes[currentPresIndex];
-
             document.getElementById('presNodeTitle').innerText = node.text;
-
             document.getElementById('presNodeNotes').innerText = node.notes || 'No additional notes for this node.';
-
             document.getElementById('presNodePriority').innerText = `Priority: ${node.priority.toUpperCase()}`;
-
             document.getElementById('presCounter').innerText = `${currentPresIndex + 1} / ${presentationNodes.length}`;
-
         }
-
-
 
         function nextPresStep() {
-
             if (currentPresIndex < presentationNodes.length - 1) {
-
                 currentPresIndex++;
-
                 updatePresentationSlide();
-
             }
-
         }
-
-
 
         function prevPresStep() {
-
             if (currentPresIndex > 0) {
-
                 currentPresIndex--;
-
                 updatePresentationSlide();
-
             }
-
         }
-
-
 
         function escapeHtml(text) {
-
-            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-
+            const map = { '&': '&', '<': '<', '>': '>', '"': '"', "'": ''' };
             return text.replace(/[&<>"']/g, function(m) { return map[m]; });
-
         }
-
     </script>
-
 </body>
-
 </html>
