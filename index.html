@@ -187,13 +187,25 @@
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Node Background Color</label>
-                    <div class="flex space-x-2">
-                        <button onclick="updateActiveNodeColor('#4f46e5')" class="w-8 h-8 rounded-full bg-indigo-600 hover:scale-110 transition border-2 border-slate-700 cursor-pointer"></button>
-                        <button onclick="updateActiveNodeColor('#0ea5e9')" class="w-8 h-8 rounded-full bg-sky-500 hover:scale-110 transition border-2 border-slate-700 cursor-pointer"></button>
-                        <button onclick="updateActiveNodeColor('#10b981')" class="w-8 h-8 rounded-full bg-emerald-500 hover:scale-110 transition border-2 border-slate-700 cursor-pointer"></button>
-                        <button onclick="updateActiveNodeColor('#f59e0b')" class="w-8 h-8 rounded-full bg-amber-500 hover:scale-110 transition border-2 border-slate-700 cursor-pointer"></button>
-                        <button onclick="updateActiveNodeColor('#ef4444')" class="w-8 h-8 rounded-full bg-red-500 hover:scale-110 transition border-2 border-slate-700 cursor-pointer"></button>
-                        <button onclick="updateActiveNodeColor('#8b5cf6')" class="w-8 h-8 rounded-full bg-purple-500 hover:scale-110 transition border-2 border-slate-700 cursor-pointer"></button>
+                    <!-- Expanded Color Palette + Custom Color Picker -->
+                    <div class="flex flex-wrap gap-2 items-center">
+                        <button onclick="updateActiveNodeColor('#4f46e5')" class="w-7 h-7 rounded-full bg-indigo-600 hover:scale-110 transition border-2 border-slate-700 cursor-pointer" title="Indigo"></button>
+                        <button onclick="updateActiveNodeColor('#6366f1')" class="w-7 h-7 rounded-full bg-indigo-500 hover:scale-110 transition border-2 border-slate-700 cursor-pointer" title="Light Indigo"></button>
+                        <button onclick="updateActiveNodeColor('#0ea5e9')" class="w-7 h-7 rounded-full bg-sky-500 hover:scale-110 transition border-2 border-slate-700 cursor-pointer" title="Sky Blue"></button>
+                        <button onclick="updateActiveNodeColor('#3b82f6')" class="w-7 h-7 rounded-full bg-blue-500 hover:scale-110 transition border-2 border-slate-700 cursor-pointer" title="Blue"></button>
+                        <button onclick="updateActiveNodeColor('#10b981')" class="w-7 h-7 rounded-full bg-emerald-500 hover:scale-110 transition border-2 border-slate-700 cursor-pointer" title="Emerald"></button>
+                        <button onclick="updateActiveNodeColor('#22c55e')" class="w-7 h-7 rounded-full bg-green-500 hover:scale-110 transition border-2 border-slate-700 cursor-pointer" title="Green"></button>
+                        <button onclick="updateActiveNodeColor('#f59e0b')" class="w-7 h-7 rounded-full bg-amber-500 hover:scale-110 transition border-2 border-slate-700 cursor-pointer" title="Amber"></button>
+                        <button onclick="updateActiveNodeColor('#eab308')" class="w-7 h-7 rounded-full bg-yellow-500 hover:scale-110 transition border-2 border-slate-700 cursor-pointer" title="Yellow"></button>
+                        <button onclick="updateActiveNodeColor('#ef4444')" class="w-7 h-7 rounded-full bg-red-500 hover:scale-110 transition border-2 border-slate-700 cursor-pointer" title="Red"></button>
+                        <button onclick="updateActiveNodeColor('#f43f5e')" class="w-7 h-7 rounded-full bg-rose-500 hover:scale-110 transition border-2 border-slate-700 cursor-pointer" title="Rose"></button>
+                        <button onclick="updateActiveNodeColor('#8b5cf6')" class="w-7 h-7 rounded-full bg-purple-500 hover:scale-110 transition border-2 border-slate-700 cursor-pointer" title="Purple"></button>
+                        <button onclick="updateActiveNodeColor('#ec4899')" class="w-7 h-7 rounded-full bg-pink-500 hover:scale-110 transition border-2 border-slate-700 cursor-pointer" title="Pink"></button>
+                        <button onclick="updateActiveNodeColor('#64748b')" class="w-7 h-7 rounded-full bg-slate-500 hover:scale-110 transition border-2 border-slate-700 cursor-pointer" title="Slate"></button>
+                        <!-- Custom Color Picker Input -->
+                        <div class="relative w-7 h-7 rounded-full overflow-hidden border-2 border-slate-700 hover:scale-110 transition cursor-pointer" title="Custom Color">
+                            <input type="color" id="inspectColorPicker" onchange="updateActiveNodeColor(this.value)" class="absolute -top-2 -left-2 w-12 h-12 cursor-pointer">
+                        </div>
                     </div>
                 </div>
                 <div>
@@ -788,6 +800,12 @@
                 document.getElementById('inspectShape').value = node.shape || 'rounded';
                 document.getElementById('inspectPriority').value = node.priority || 'normal';
                 document.getElementById('inspectLineStyle').value = node.lineStyle || 'bezier';
+                
+                // Set color picker value if node has color
+                if (node.color) {
+                    document.getElementById('inspectColorPicker').value = node.color;
+                }
+
                 inspectorPanel.classList.remove('translate-x-full');
             }
             render();
@@ -826,7 +844,11 @@
         function updateActiveNodeColor(color) {
             if (!activeNodeId) return;
             const node = mindMapData.nodes.find(function(n) { return n.id === activeNodeId; });
-            if (node) { node.color = color; render(); }
+            if (node) { 
+                node.color = color; 
+                document.getElementById('inspectColorPicker').value = color;
+                render(); 
+            }
         }
 
         function updateActiveLineStyle(val) {
@@ -847,7 +869,7 @@
             const verticalOffset = (childIndex - (existingChildren.length / 2)) * 110; 
             const newY = baseY + verticalOffset;
 
-            const colors = ['#4f46e5', '#0ea5e9', '#10b981', '#f59e0b', '#8b5cf6'];
+            const colors = ['#4f46e5', '#0ea5e9', '#10b981', '#f59e0b', '#8b5cf6', '#3b82f6', '#22c55e', '#eab308', '#ef4444', '#ec4899'];
             const randomColor = colors[Math.floor(Math.random() * colors.length)];
 
             mindMapData.nodes.push({
@@ -911,7 +933,6 @@
             render();
         }
 
-        // PERBAIKAN UTAMA: Algoritma Auto-Layout anti-tumpang tindih (Non-overlapping)
         function autoLayout(type) {
             const roots = mindMapData.nodes.filter(function(n) { return !n.parent || n.parent === 'root' && n.id === 'root'; });
             if (roots.length === 0) return;
@@ -924,7 +945,6 @@
             if (children.length === 0) { render(); return; }
 
             if (type === 'tree') {
-                // Hitung total tinggi yang dibutuhkan berdasarkan jumlah cucu di setiap cabang
                 let totalSlots = 0;
                 children.forEach(function(child) {
                     const gcs = mindMapData.nodes.filter(function(n) { return n.parent === child.id; });
@@ -938,7 +958,6 @@
                     const subSlots = Math.max(1, grandChildren.length);
                     const blockHeight = subSlots * 110;
 
-                    // Posisikan anak tepat di tengah blok ruang miliknya
                     child.x = root.x + 350;
                     child.y = currentY + (blockHeight / 2) - 40;
 
@@ -950,13 +969,10 @@
                             gcY += 110;
                         });
                     }
-                    currentY += blockHeight + 30; // Beri jarak aman antar cabang
+                    currentY += blockHeight + 30;
                 });
 
             } else if (type === 'fishbone') {
-                let leftY = root.y - 180;
-                let rightY = root.y + 180;
-
                 children.forEach(function(child, index) {
                     const side = index % 2 === 0 ? -1 : 1;
                     child.x = root.x + ((Math.floor(index / 2) + 1) * 260);
@@ -969,7 +985,6 @@
                     });
                 });
             } else {
-                // Free / Radial Layout (Melingkar menyebar luas)
                 children.forEach(function(child, index) {
                     const angle = (index / children.length) * 2 * Math.PI;
                     child.x = root.x + Math.cos(angle) * 400;
