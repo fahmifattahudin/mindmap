@@ -494,11 +494,11 @@
                 const zoomFactor = 1.15;
                 const rect = visualWorkspace.getBoundingClientRect();
                 
-                // Posisi kursor relatif terhadap workspace
+                // Get mouse position relative to workspace
                 const mouseX = e.clientX - rect.left;
                 const mouseY = e.clientY - rect.top;
 
-                // Tentukan skala baru
+                // Determine new scale
                 let oldScale = scale;
                 if (e.deltaY < 0) {
                     scale = Math.min(scale * zoomFactor, 3.5);
@@ -506,7 +506,7 @@
                     scale = Math.max(scale / zoomFactor, 0.2);
                 }
 
-                // Sesuaikan panX dan panY agar zoom berpusat pada kursor mouse
+                // Adjust panX and panY so zoom centers on the mouse pointer
                 panX = mouseX - (mouseX - panX) * (scale / oldScale);
                 panY = mouseY - (mouseY - panY) * (scale / oldScale);
 
