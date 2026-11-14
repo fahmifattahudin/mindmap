@@ -93,7 +93,7 @@
 
         <!-- Visual Canvas View -->
         <div id="visualWorkspace" class="flex-1 h-full relative canvas-bg cursor-grab active:cursor-grabbing">
-            <div id="transformContainer" class="absolute top-0 left-0 w-[5000px] h-[5000px] origin-top-left pointer-events-none">
+            <div id="transformContainer" class="absolute top-0 left-0 w-[5000px] h-[5000px] pointer-events-none" style="transform-origin: 0 0;">
                 <!-- SVG Connections Layer -->
                 <svg id="connectionsLayer" class="absolute top-0 left-0 w-full h-full pointer-events-none z-0"></svg>
                 <!-- Nodes Layer -->
@@ -490,12 +490,26 @@
 
             visualWorkspace.addEventListener('wheel', function(e) {
                 e.preventDefault();
-                const zoomFactor = 1.1;
+                
+                const zoomFactor = 1.15;
+                const rect = visualWorkspace.getBoundingClientRect();
+                
+                // Posisi kursor relatif terhadap workspace
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+
+                // Tentukan skala baru
+                let oldScale = scale;
                 if (e.deltaY < 0) {
-                    scale = Math.min(scale * zoomFactor, 2.5);
+                    scale = Math.min(scale * zoomFactor, 3.5);
                 } else {
-                    scale = Math.max(scale / zoomFactor, 0.3);
+                    scale = Math.max(scale / zoomFactor, 0.2);
                 }
+
+                // Sesuaikan panX dan panY agar zoom berpusat pada kursor mouse
+                panX = mouseX - (mouseX - panX) * (scale / oldScale);
+                panY = mouseY - (mouseY - panY) * (scale / oldScale);
+
                 updateTransform();
             }, { passive: false });
         }
