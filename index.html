@@ -325,16 +325,16 @@
             nodesContainer.innerHTML = '';
             connectionsLayer.innerHTML = '';
 
-            mindMapData.nodes.forEach(node => {
+            mindMapData.nodes.forEach(function(node) {
                 if (node.parent) {
-                    const parentNode = mindMapData.nodes.find(n => n.id === node.parent);
+                    const parentNode = mindMapData.nodes.find(function(n) { return n.id === node.parent; });
                     if (parentNode) {
                         drawConnection(parentNode, node, node.lineStyle || 'bezier');
                     }
                 }
             });
 
-            mindMapData.nodes.forEach(node => {
+            mindMapData.nodes.forEach(function(node) {
                 const el = document.createElement('div');
                 el.className = "absolute pointer-events-auto node-card cursor-pointer flex items-center shadow-xl p-3.5 select-none transition-all";
                 el.style.left = node.x + 'px';
@@ -358,18 +358,51 @@
                     el.style.boxShadow = '0 0 0 4px rgba(255, 255, 255, 0.8), 0 10px 25px -5px rgba(0,0,0,0.4)';
                 }
 
-                let priorityBadge = '';
-                if (node.priority === 'high') {
-                    priorityBadge = '<span class="ml-2 text-xs bg-red-900/60 text-red-200 px-1.5 py-0.5 rounded">🔴 High</span>';
-                } else if (node.priority === 'medium') {
-                    priorityBadge = '<span class="ml-2 text-xs bg-amber-900/60 text-amber-200 px-1.5 py-0.5 rounded">🟡 Med</span>';
-                } else if (node.priority === 'low') {
-                    priorityBadge = '<span class="ml-2 text-xs bg-emerald-900/60 text-emerald-200 px-1.5 py-0.5 rounded">🟢 Low</span>';
+                // DOM Creation Murni (Aman dari SyntaxError)
+                const innerFlex = document.createElement('div');
+                innerFlex.className = "flex-1 overflow-hidden";
+
+                const titleRow = document.createElement('div');
+                titleRow.className = "font-bold text-sm truncate flex items-center justify-between";
+
+                const textSpan = document.createElement('span');
+                textSpan.textContent = node.text;
+                titleRow.appendChild(textSpan);
+
+                if (node.priority && node.priority !== 'normal') {
+                    const badge = document.createElement('span');
+                    badge.className = "ml-2 text-xs px-1.5 py-0.5 rounded";
+                    if (node.priority === 'high') {
+                        badge.className += " bg-red-900/60 text-red-200";
+                        badge.textContent = "🔴 High";
+                    } else if (node.priority === 'medium') {
+                        badge.className += " bg-amber-900/60 text-amber-200";
+                        badge.textContent = "🟡 Med";
+                    } else if (node.priority === 'low') {
+                        badge.className += " bg-emerald-900/60 text-emerald-200";
+                        badge.textContent = "🟢 Low";
+                    }
+                    titleRow.appendChild(badge);
                 }
+                innerFlex.appendChild(titleRow);
 
-                let notesHtml = node.notes ? '<div class="text-xs opacity-80 truncate mt-0.5">' + escapeHtml(node.notes) + '</div>' : '';
+                if (node.notes) {
+                    const notesDiv = document.createElement('div');
+                    notesDiv.className = "text-xs opacity-80 truncate mt-0.5";
+                    notesDiv.textContent = node.notes;
+                    innerFlex.appendChild(notesDiv);
+                }
+                el.appendChild(innerFlex);
 
-                el.innerHTML = '<div class="flex-1 overflow-hidden"><div class="font-bold text-sm truncate flex items-center justify-between"><span>' + escapeHtml(node.text) + '</span>' + priorityBadge + '</div>' + notesHtml + '</div><button onclick="event.stopPropagation(); addChildNode(\'' + node.id + '\')" class="ml-2 w-6 h-6 bg-black/20 hover:bg-black/40 rounded-full flex items-center justify-center text-white text-xs transition shrink-0 cursor-pointer" title="Add Branch"><i class="fa-solid fa-plus"></i></button>';
+                const addBtn = document.createElement('button');
+                addBtn.className = "ml-2 w-6 h-6 bg-black/20 hover:bg-black/40 rounded-full flex items-center justify-center text-white text-xs transition shrink-0 cursor-pointer";
+                addBtn.title = "Add Branch";
+                addBtn.innerHTML = '<i class="fa-solid fa-plus"></i>';
+                addBtn.onclick = function(e) {
+                    e.stopPropagation();
+                    addChildNode(node.id);
+                };
+                el.appendChild(addBtn);
 
                 let isDraggingNode = false;
                 let startMouseX, startMouseY;
@@ -478,7 +511,7 @@
 
         function selectNode(id) {
             activeNodeId = id;
-            const node = mindMapData.nodes.find(n => n.id === id);
+            const node = mindMapData.nodes.find(function(n) { return n.id === id; });
             if (node) {
                 document.getElementById('inspectNodeId').value = node.id;
                 document.getElementById('inspectText').value = node.text;
@@ -499,45 +532,45 @@
 
         function updateActiveNodeText(val) {
             if (!activeNodeId) return;
-            const node = mindMapData.nodes.find(n => n.id === activeNodeId);
+            const node = mindMapData.nodes.find(function(n) { return n.id === activeNodeId; });
             if (node) { node.text = val; render(); }
         }
 
         function updateActiveNodeNotes(val) {
             if (!activeNodeId) return;
-            const node = mindMapData.nodes.find(n => n.id === activeNodeId);
+            const node = mindMapData.nodes.find(function(n) { return n.id === activeNodeId; });
             if (node) { node.notes = val; render(); }
         }
 
         function updateActiveNodeShape(val) {
             if (!activeNodeId) return;
-            const node = mindMapData.nodes.find(n => n.id === activeNodeId);
+            const node = mindMapData.nodes.find(function(n) { return n.id === activeNodeId; });
             if (node) { node.shape = val; render(); }
         }
 
         function updateActiveNodePriority(val) {
             if (!activeNodeId) return;
-            const node = mindMapData.nodes.find(n => n.id === activeNodeId);
+            const node = mindMapData.nodes.find(function(n) { return n.id === activeNodeId; });
             if (node) { node.priority = val; render(); }
         }
 
         function updateActiveNodeColor(color) {
             if (!activeNodeId) return;
-            const node = mindMapData.nodes.find(n => n.id === activeNodeId);
+            const node = mindMapData.nodes.find(function(n) { return n.id === activeNodeId; });
             if (node) { node.color = color; render(); }
         }
 
         function updateActiveLineStyle(val) {
             if (!activeNodeId) return;
-            const node = mindMapData.nodes.find(n => n.id === activeNodeId);
+            const node = mindMapData.nodes.find(function(n) { return n.id === activeNodeId; });
             if (node) { node.lineStyle = val; render(); }
         }
 
         function addChildNode(parentId) {
-            const parentNode = mindMapData.nodes.find(n => n.id === parentId);
+            const parentNode = mindMapData.nodes.find(function(n) { return n.id === parentId; });
             const newId = 'node-' + Date.now();
             
-            const existingChildren = mindMapData.nodes.filter(n => n.parent === parentId);
+            const existingChildren = mindMapData.nodes.filter(function(n) { return n.parent === parentId; });
             const childIndex = existingChildren.length;
 
             const newX = parentNode ? parentNode.x + 280 : 2300;
@@ -579,7 +612,7 @@
             let foundMore = true;
             while(foundMore) {
                 foundMore = false;
-                mindMapData.nodes.forEach(n => {
+                mindMapData.nodes.forEach(function(n) {
                     if (toDelete.includes(n.parent) && !toDelete.includes(n.id)) {
                         toDelete.push(n.id);
                         foundMore = true;
@@ -587,7 +620,7 @@
                 });
             }
 
-            mindMapData.nodes = mindMapData.nodes.filter(n => !toDelete.includes(n.id));
+            mindMapData.nodes = mindMapData.nodes.filter(function(n) { return !toDelete.includes(n.id); });
             closeInspector();
             render();
         }
@@ -610,33 +643,33 @@
         }
 
         function autoLayout(type) {
-            const root = mindMapData.nodes.find(n => n.id === 'root') || mindMapData.nodes[0];
+            const root = mindMapData.nodes.find(function(n) { return n.id === 'root'; }) || mindMapData.nodes[0];
             if (!root) return;
 
             root.x = 2300;
             root.y = 2300;
 
-            const children = mindMapData.nodes.filter(n => n.parent === root.id);
+            const children = mindMapData.nodes.filter(function(n) { return n.parent === root.id; });
             
             if (type === 'tree') {
                 let startY = root.y - (children.length * 90) / 2;
-                children.forEach((child, index) => {
+                children.forEach(function(child, index) {
                     child.x = root.x + 300;
                     child.y = startY + (index * 120);
-                    const grandChildren = mindMapData.nodes.filter(n => n.parent === child.id);
-                    grandChildren.forEach((gc, gIndex) => {
+                    const grandChildren = mindMapData.nodes.filter(function(n) { return n.parent === child.id; });
+                    grandChildren.forEach(function(gc, gIndex) {
                         gc.x = child.x + 280;
                         gc.y = child.y + ((gIndex - (grandChildren.length-1)/2) * 80);
                     });
                 });
             } else if (type === 'fishbone') {
-                children.forEach((child, index) => {
+                children.forEach(function(child, index) {
                     const side = index % 2 === 0 ? -1 : 1;
                     child.x = root.x + ((index + 1) * 220);
                     child.y = root.y + (side * 180);
                 });
             } else {
-                children.forEach((child, index) => {
+                children.forEach(function(child, index) {
                     const angle = (index / children.length) * 2 * Math.PI;
                     child.x = root.x + Math.cos(angle) * 320;
                     child.y = root.y + Math.sin(angle) * 320;
@@ -668,8 +701,8 @@
             const container = document.getElementById('outlineContent');
             container.innerHTML = '';
             
-            const roots = mindMapData.nodes.filter(n => !n.parent || n.parent === 'root' && n.id === 'root');
-            roots.forEach(root => {
+            const roots = mindMapData.nodes.filter(function(n) { return !n.parent || n.parent === 'root' && n.id === 'root'; });
+            roots.forEach(function(root) {
                 container.appendChild(createOutlineItem(root, 0));
             });
         }
@@ -678,15 +711,41 @@
             const div = document.createElement('div');
             div.className = 'p-3 rounded-xl bg-slate-800 border border-slate-700 ml-' + (level * 6) + ' flex items-center justify-between shadow-md';
             
-            let notesHtml = node.notes ? '<span class="text-xs text-slate-400 italic">(' + escapeHtml(node.notes) + ')</span>' : '';
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'flex items-center space-x-3';
 
-            div.innerHTML = '<div class="flex items-center space-x-3"><span class="w-3 h-3 rounded-full" style="background-color: ' + node.color + '"></span><span class="font-semibold text-white text-sm">' + escapeHtml(node.text) + '</span>' + notesHtml + '</div><button onclick="addChildNode(\'' + node.id + '\'); toggleViewMode();" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-1 rounded-lg transition cursor-pointer"><i class="fa-solid fa-plus mr-1"></i>Sub-branch</button>';
+            const dot = document.createElement('span');
+            dot.className = 'w-3 h-3 rounded-full';
+            dot.style.backgroundColor = node.color;
+            infoDiv.appendChild(dot);
+
+            const titleSpan = document.createElement('span');
+            titleSpan.className = 'font-semibold text-white text-sm';
+            titleSpan.textContent = node.text;
+            infoDiv.appendChild(titleSpan);
+
+            if (node.notes) {
+                const notesSpan = document.createElement('span');
+                notesSpan.className = 'text-xs text-slate-400 italic';
+                notesSpan.textContent = '(' + node.notes + ')';
+                infoDiv.appendChild(notesSpan);
+            }
+            div.appendChild(infoDiv);
+
+            const subBtn = document.createElement('button');
+            subBtn.className = 'text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-1 rounded-lg transition cursor-pointer';
+            subBtn.innerHTML = '<i class="fa-solid fa-plus mr-1"></i>Sub-branch';
+            subBtn.onclick = function() {
+                addChildNode(node.id);
+                toggleViewMode();
+            };
+            div.appendChild(subBtn);
 
             const wrapper = document.createElement('div');
             wrapper.appendChild(div);
 
-            const children = mindMapData.nodes.filter(n => n.parent === node.id);
-            children.forEach(child => {
+            const children = mindMapData.nodes.filter(function(n) { return n.parent === node.id; });
+            children.forEach(function(child) {
                 wrapper.appendChild(createOutlineItem(child, level + 1));
             });
 
