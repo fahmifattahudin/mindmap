@@ -97,7 +97,7 @@
                 <!-- SVG Connections Layer -->
                 <svg id="connectionsLayer" class="absolute top-0 left-0 w-full h-full pointer-events-none z-0"></svg>
                 <!-- Nodes Layer -->
-                <div id="nodesContainer" class="absolute top-0 left-0 w-full h-full pointer-events-auto z-20"></div>
+                <div id="nodesContainer" class="absolute top-0 left-0 w-full h-full pointer-events-none z-20"></div>
             </div>
 
             <!-- Floating Hint / Instructions -->
@@ -312,10 +312,13 @@
             const saved = localStorage.getItem('mindmap_ultimate_data');
             if (saved) {
                 try {
-                    mindMapData = JSON.parse(saved);
-                    document.getElementById('mapTitle').value = mindMapData.title || "My Main Idea";
+                    const parsed = JSON.parse(saved);
+                    if (parsed && parsed.nodes && parsed.nodes.length > 0) {
+                        mindMapData = parsed;
+                    }
                 } catch(e) { console.error(e); }
             }
+            document.getElementById('mapTitle').value = mindMapData.title || "My Main Idea";
         }
 
         function render() {
@@ -443,7 +446,8 @@
 
         function setupPanAndZoom() {
             visualWorkspace.onmousedown = (e) => {
-                if (e.target !== visualWorkspace && e.target !== transformContainer && e.target !== connectionsLayer && e.target.tagName !== 'svg') return;
+                // Hanya aktifkan pan jika yang diklik adalah background area kerja, bukan node atau tombol
+                if (e.target.closest('.node-card')) return;
                 isPanning = true;
                 startX = e.clientX - panX;
                 startY = e.clientY - panY;
@@ -539,13 +543,11 @@
             const parentNode = mindMapData.nodes.find(n => n.id === parentId);
             const newId = 'node-' + Date.now();
             
-            // Hitung jumlah anak agar posisi vertikalnya menyebar ke atas dan bawah dengan jarak aman (110px)
             const existingChildren = mindMapData.nodes.filter(n => n.parent === parentId);
             const childIndex = existingChildren.length;
 
             const newX = parentNode ? parentNode.x + 280 : 2300;
             const baseY = parentNode ? parentNode.y : 2300;
-            // Jarak vertikal diperlebar menjadi 110px per node agar tidak bertumpuk
             const verticalOffset = (childIndex - (existingChildren.length / 2)) * 110; 
             const newY = baseY + verticalOffset;
 
@@ -812,7 +814,7 @@
         }
 
         function escapeHtml(text) {
-            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            const map = { '&': '&', '<': '<', '>': '>', '"': '"', "'": ''' };
             return text.replace(/[&<>"']/g, function(m) { return map[m]; });
         }
     </script>
