@@ -337,8 +337,8 @@
             mindMapData.nodes.forEach(node => {
                 const el = document.createElement('div');
                 el.className = `absolute pointer-events-auto node-card cursor-pointer flex items-center shadow-xl p-3.5 select-none transition-all`;
-                el.style.left = `${node.x}px`;
-                el.style.top = `${node.y}px`;
+                el.style.left = node.x + 'px';
+                el.style.top = node.y + 'px';
                 el.style.backgroundColor = node.color;
                 el.style.color = '#ffffff';
                 el.style.minWidth = '150px';
@@ -385,7 +385,7 @@
                     startMouseX = e.clientX;
                     startMouseY = e.clientY;
                     selectNode(node.id);
-                    e.stopPropagation(); // Mencegah event pan canvas tertrigger saat drag node
+                    e.stopPropagation();
                 };
 
                 window.addEventListener('mousemove', (e) => {
@@ -445,14 +445,12 @@
         }
 
         function setupPanAndZoom() {
-            // Menggunakan event mousedown langsung pada workspace utama
-            visualWorkspace.onmousedown = (e) => {
-                // Jika yang diklik adalah node card atau tombol di dalam node, abaikan pan canvas
+            visualWorkspace.addEventListener('mousedown', (e) => {
                 if (e.target.closest('.node-card') || e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
                 isPanning = true;
                 startX = e.clientX - panX;
                 startY = e.clientY - panY;
-            };
+            });
 
             window.addEventListener('mousemove', (e) => {
                 if (!isPanning) return;
