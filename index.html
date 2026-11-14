@@ -50,14 +50,34 @@
             <div class="bg-indigo-600 text-white p-2 rounded-lg flex items-center justify-center shadow-md">
                 <i class="fa-solid fa-brain text-lg"></i>
             </div>
-            <!-- Category / Switcher Dropdown -->
-            <div class="flex items-center space-x-2">
-                <select id="mapCategorySelect" onchange="switchMapCategory(this.value)" class="bg-slate-800 border border-slate-700 text-white text-xs sm:text-sm font-semibold rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-500 cursor-pointer">
-                    <!-- Populated via JS -->
-                </select>
-                <button onclick="createNewMapPrompt()" title="Create New Mind Map" class="bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer flex items-center shadow">
-                    <i class="fa-solid fa-plus mr-1"></i>New
+
+            <!-- File / Category Dropdown Switcher -->
+            <div class="relative">
+                <button onclick="toggleFileDropdown()" id="fileDropdownBtn" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded-lg text-sm font-semibold border border-slate-700 transition flex items-center space-x-2 cursor-pointer">
+                    <i class="fa-solid fa-folder-open text-indigo-400"></i>
+                    <span id="currentFileName" class="max-w-[120px] sm:max-w-[160px] truncate">My Main Idea</span>
+                    <i class="fa-solid fa-chevron-down text-xs text-slate-400 ml-1"></i>
                 </button>
+
+                <!-- Dropdown Menu Box -->
+                <div id="fileDropdownMenu" class="absolute left-0 mt-2 w-64 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl hidden z-50 overflow-hidden">
+                    <div class="p-2 border-b border-slate-800 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                        My Mind Maps
+                    </div>
+                    <div id="fileListContainer" class="max-h-48 overflow-y-auto p-1 space-y-1">
+                        <!-- Dynamically populated -->
+                    </div>
+                    <div class="p-2 border-t border-slate-800 bg-slate-950/50 flex space-x-1">
+                        <button onclick="openNewMapModal()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium py-1.5 px-2 rounded-lg transition flex items-center justify-center space-x-1.5 cursor-pointer">
+                            <i class="fa-solid fa-plus"></i><span>New Mind Map</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hidden sm:block">
+                <input type="text" id="mapTitle" oninput="updateActiveMapTitle(this.value)" value="My Main Idea" class="bg-transparent font-bold text-lg text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 rounded px-1 w-48 sm:w-56">
+                <span class="text-xs text-slate-400 block -mt-1">Auto-saved in browser</span>
             </div>
         </div>
 
@@ -196,6 +216,26 @@
         </div>
     </div>
 
+    <!-- New Mind Map Modal -->
+    <div id="newMapModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+            <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+                <h3 class="font-bold text-white flex items-center"><i class="fa-solid fa-folder-plus mr-2 text-indigo-400"></i>Create New Mind Map</h3>
+                <button onclick="closeNewMapModal()" class="text-slate-400 hover:text-white cursor-pointer"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">Mind Map Title / Category:</label>
+                    <input type="text" id="newMapTitleInput" placeholder="E.g., Business Strategy, Presentation..." class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex justify-end space-x-3 pt-2">
+                    <button onclick="closeNewMapModal()" class="px-4 py-2 rounded-lg text-slate-300 hover:bg-slate-800 text-sm font-medium transition cursor-pointer">Cancel</button>
+                    <button onclick="createNewMap()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-lg text-sm font-medium transition shadow-md cursor-pointer">Create Map</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- AI Brainstorm Modal -->
     <div id="aiModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
@@ -267,10 +307,8 @@
 
     <!-- Main JavaScript Application -->
     <script>
-        // Multi-file / Category State
-        let allMaps = {};
-        let currentMapId = 'default_map';
-
+        // Multi-Project Management via localStorage
+        let currentMapId = localStorage.getItem('mindmap_active_id') || 'map-default';
         let mindMapData = {
             title: "My Main Idea",
             nodes: [
@@ -297,10 +335,20 @@
         const inspectorPanel = document.getElementById('inspectorPanel');
 
         window.onload = function() {
-            loadAllMaps();
+            loadMapList();
+            loadFromLocalStorage();
             render();
             setupPanAndZoom();
             centerCanvas();
+
+            // Close dropdown when clicking outside
+            window.addEventListener('click', function(e) {
+                const dropdown = document.getElementById('fileDropdownMenu');
+                const btn = document.getElementById('fileDropdownBtn');
+                if (!dropdown.contains(e.target) && !btn.contains(e.target)) {
+                    dropdown.classList.add('hidden');
+                }
+            });
         };
 
         function centerCanvas() {
@@ -312,95 +360,197 @@
             }
         }
 
-        // --- MULTI-FILE / CATEGORY MANAGEMENT ---
-        function loadAllMaps() {
-            const savedAll = localStorage.getItem('mindmap_all_collections');
-            if (savedAll) {
-                try {
-                    allMaps = JSON.parse(savedAll);
-                } catch(e) { allMaps = {}; }
+        // --- MULTI-MAP STORAGE & MANAGEMENT SYSTEM ---
+        function getSavedMapList() {
+            const list = localStorage.getItem('mindmap_projects_list');
+            if (list) {
+                try { return JSON.parse(list); } catch(e) { }
+            }
+            // Default initial list
+            return [{ id: 'map-default', title: 'My Main Idea' }];
+        }
+
+        function saveMapList(list) {
+            localStorage.setItem('mindmap_projects_list', JSON.stringify(list));
+        }
+
+        function loadMapList() {
+            const list = getSavedMapList();
+            const container = document.getElementById('fileListContainer');
+            container.innerHTML = '';
+
+            list.forEach(function(item) {
+                const isActive = item.id === currentMapId;
+                const row = document.createElement('div');
+                row.className = "flex items-center justify-between px-3 py-2 rounded-lg text-sm transition " + (isActive ? "bg-indigo-600/30 text-white font-semibold border border-indigo-500/30" : "text-slate-300 hover:bg-slate-800 cursor-pointer");
+
+                const leftDiv = document.createElement('div');
+                leftDiv.className = "flex items-center space-x-2 truncate flex-1 cursor-pointer";
+                leftDiv.innerHTML = '<i class="fa-solid fa-folder' + (isActive ? '-open text-indigo-400' : ' text-slate-400') + '"></i><span class="truncate">' + escapeHtml(item.title) + '</span>' + (isActive ? ' <span class="text-[10px] bg-indigo-500 text-white px-1.5 py-0.2 rounded ml-1">Active</span>' : '');
+                leftDiv.onclick = function() {
+                    switchMap(item.id);
+                };
+                row.appendChild(leftDiv);
+
+                // Delete button (prevent deleting if it's the only map left)
+                if (list.length > 1) {
+                    const delBtn = document.createElement('button');
+                    delBtn.className = "text-slate-400 hover:text-red-400 p-1 rounded transition ml-2 cursor-pointer";
+                    delBtn.title = "Delete Mind Map";
+                    delBtn.innerHTML = '<i class="fa-solid fa-trash text-xs"></i>';
+                    delBtn.onclick = function(e) {
+                        e.stopPropagation();
+                        deleteMap(item.id);
+                    };
+                    row.appendChild(delBtn);
+                }
+
+                container.appendChild(row);
+            });
+
+            document.getElementById('currentFileName').textContent = mindMapData.title || "My Mind Map";
+        }
+
+        function toggleFileDropdown() {
+            const menu = document.getElementById('fileDropdownMenu');
+            menu.classList.toggle('hidden');
+            loadMapList();
+        }
+
+        function openNewMapModal() {
+            document.getElementById('fileDropdownMenu').classList.add('hidden');
+            document.getElementById('newMapModal').classList.remove('hidden');
+            document.getElementById('newMapModal').classList.add('flex');
+            document.getElementById('newMapTitleInput').focus();
+        }
+
+        function closeNewMapModal() {
+            document.getElementById('newMapModal').classList.remove('flex');
+            document.getElementById('newMapModal').classList.add('hidden');
+            document.getElementById('newMapTitleInput').value = '';
+        }
+
+        function createNewMap() {
+            const titleInput = document.getElementById('newMapTitleInput').value.trim();
+            const mapTitle = titleInput || "New Mind Map";
+            const newId = 'map-' + Date.now();
+
+            // Save current map first
+            saveToLocalStorage();
+
+            // Setup new map data
+            mindMapData = {
+                title: mapTitle,
+                nodes: [
+                    { id: "root", text: mapTitle, x: 2300, y: 2300, color: "#4f46e5", shape: "rounded", notes: "Central idea for " + mapTitle, priority: "normal", lineStyle: "bezier", parent: null }
+                ]
+            };
+            currentMapId = newId;
+            localStorage.setItem('mindmap_active_id', currentMapId);
+
+            // Update projects list
+            let list = getSavedMapList();
+            list.push({ id: newId, title: mapTitle });
+            saveMapList(list);
+
+            closeNewMapModal();
+            scale = 1;
+            render();
+            centerCanvas();
+            loadMapList();
+        }
+
+        function switchMap(mapId) {
+            if (mapId === currentMapId) {
+                document.getElementById('fileDropdownMenu').classList.add('hidden');
+                return;
             }
 
-            // Fallback jika kosong atau migrasi data lama
-            if (!allMaps || Object.keys(allMaps).length === 0) {
-                const oldData = localStorage.getItem('mindmap_ultimate_data');
-                if (oldData) {
-                    try {
-                        mindMapData = JSON.parse(oldData);
-                    } catch(e) {}
-                }
-                allMaps = {
-                    'default_map': mindMapData
+            // Save current active map before switching
+            saveToLocalStorage();
+
+            currentMapId = mapId;
+            localStorage.setItem('mindmap_active_id', currentMapId);
+
+            // Load new map data
+            const saved = localStorage.getItem('mindmap_data_' + currentMapId);
+            if (saved) {
+                try {
+                    mindMapData = JSON.parse(saved);
+                } catch(e) { }
+            } else {
+                mindMapData = {
+                    title: "Untitled Map",
+                    nodes: [
+                        { id: "root", text: "Main Idea", x: 2300, y: 2300, color: "#4f46e5", shape: "rounded", notes: "", priority: "normal", lineStyle: "bezier", parent: null }
+                    ]
                 };
             }
 
-            const savedCurrentId = localStorage.getItem('mindmap_current_id');
-            if (savedCurrentId && allMaps[savedCurrentId]) {
-                currentMapId = savedCurrentId;
-            } else {
-                currentMapId = Object.keys(allMaps)[0];
-            }
-
-            mindMapData = allMaps[currentMapId];
-            document.getElementById('mapTitle').value = mindMapData.title || "My Main Idea";
-            updateCategoryDropdown();
-        }
-
-        function saveAllMaps() {
-            mindMapData.title = document.getElementById('mapTitle').value || "My Main Idea";
-            allMaps[currentMapId] = mindMapData;
-            localStorage.setItem('mindmap_all_collections', JSON.stringify(allMaps));
-            localStorage.setItem('mindmap_current_id', currentMapId);
-            updateCategoryDropdown();
-        }
-
-        function updateCategoryDropdown() {
-            const select = document.getElementById('mapCategorySelect');
-            select.innerHTML = '';
-            for (let id in allMaps) {
-                const opt = document.createElement('option');
-                opt.value = id;
-                opt.textContent = allMaps[id].title || "Untitled Map";
-                if (id === currentMapId) opt.selected = true;
-                select.appendChild(opt);
-            }
-        }
-
-        function switchMapCategory(newId) {
-            if (allMaps[newId]) {
-                saveAllMaps(); // simpan dulu yang aktif
-                currentMapId = newId;
-                mindMapData = allMaps[currentMapId];
-                document.getElementById('mapTitle').value = mindMapData.title || "My Main Idea";
-                scale = 1;
-                render();
-                centerCanvas();
-                localStorage.setItem('mindmap_current_id', currentMapId);
-            }
-        }
-
-        function createNewMapPrompt() {
-            const mapName = prompt("Enter a name for your new Mind Map category (e.g., Business Strategy, Presentation):", "New Mind Map");
-            if (!mapName) return;
-
-            const newId = 'map_' + Date.now();
-            allMaps[newId] = {
-                title: mapName,
-                nodes: [
-                    { id: "root", text: mapName, x: 2300, y: 2300, color: "#8b5cf6", shape: "rounded", notes: "Central idea.", priority: "normal", lineStyle: "bezier", parent: null }
-                ]
-            };
-
-            currentMapId = newId;
-            mindMapData = allMaps[currentMapId];
-            document.getElementById('mapTitle').value = mindMapData.title;
+            document.getElementById('mapTitle').value = mindMapData.title || "My Mind Map";
+            document.getElementById('fileDropdownMenu').classList.add('hidden');
             scale = 1;
-            saveAllMaps();
+            closeInspector();
             render();
             centerCanvas();
+            loadMapList();
         }
 
-        // --- RENDER & CANVAS ---
+        function deleteMap(mapId) {
+            let list = getSavedMapList();
+            if (list.length <= 1) {
+                alert("You must keep at least one mind map!");
+                return;
+            }
+
+            if (!confirm("Are you sure you want to delete this mind map?")) return;
+
+            // Remove from storage
+            localStorage.removeItem('mindmap_data_' + mapId);
+            list = list.filter(item => item.id !== mapId);
+            saveMapList(list);
+
+            // If deleting active map, switch to the first available one
+            if (mapId === currentMapId) {
+                switchMap(list[0].id);
+            } else {
+                loadMapList();
+            }
+        }
+
+        function saveToLocalStorage() {
+            mindMapData.title = document.getElementById('mapTitle').value || "My Mind Map";
+            localStorage.setItem('mindmap_data_' + currentMapId, JSON.stringify(mindMapData));
+            
+            // Also update title in list
+            let list = getSavedMapList();
+            let found = list.find(item => item.id === currentMapId);
+            if (found) {
+                found.title = mindMapData.title;
+                saveMapList(list);
+            }
+            document.getElementById('currentFileName').textContent = mindMapData.title;
+        }
+
+        function loadFromLocalStorage() {
+            const saved = localStorage.getItem('mindmap_data_' + currentMapId);
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    if (parsed && parsed.nodes && parsed.nodes.length > 0) {
+                        mindMapData = parsed;
+                    }
+                } catch(e) { console.error(e); }
+            }
+            document.getElementById('mapTitle').value = mindMapData.title || "My Main Idea";
+        }
+
+        function updateActiveMapTitle(val) {
+            document.getElementById('currentFileName').textContent = val || "My Mind Map";
+            saveToLocalStorage();
+        }
+
+        // --- RENDER & CANVAS LOGIC ---
         function render() {
             nodesContainer.innerHTML = '';
             connectionsLayer.innerHTML = '';
@@ -509,7 +659,7 @@
                 window.addEventListener('mouseup', function() {
                     if (isDraggingNode) {
                         isDraggingNode = false;
-                        saveAllMaps();
+                        saveToLocalStorage();
                     }
                 });
 
@@ -522,7 +672,7 @@
             });
 
             if (isOutlineView) renderOutline();
-            saveAllMaps();
+            saveToLocalStorage();
         }
 
         function drawConnection(p1, p2, style) {
@@ -622,7 +772,6 @@
             if (!activeNodeId) return;
             const node = mindMapData.nodes.find(function(n) { return n.id === activeNodeId; });
             if (node) { node.text = val; render(); }
-            updateCategoryDropdown();
         }
 
         function updateActiveNodeNotes(val) {
@@ -949,7 +1098,7 @@
         }
 
         function escapeHtml(text) {
-            const map = { '&': '&', '<': '<', '>': '>', '"': '"', "'": ''' };
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
             return text.replace(/[&<>"']/g, function(m) { return map[m]; });
         }
     </script>
