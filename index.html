@@ -50,9 +50,14 @@
             <div class="bg-indigo-600 text-white p-2 rounded-lg flex items-center justify-center shadow-md">
                 <i class="fa-solid fa-brain text-lg"></i>
             </div>
-            <div>
-                <input type="text" id="mapTitle" value="My Main Idea" class="bg-transparent font-bold text-lg text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 rounded px-1 w-48 sm:w-64">
-                <span class="text-xs text-slate-400 block -mt-1">Auto-saved in browser</span>
+            <!-- Category / Switcher Dropdown -->
+            <div class="flex items-center space-x-2">
+                <select id="mapCategorySelect" onchange="switchMapCategory(this.value)" class="bg-slate-800 border border-slate-700 text-white text-xs sm:text-sm font-semibold rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-500 cursor-pointer">
+                    <!-- Populated via JS -->
+                </select>
+                <button onclick="createNewMapPrompt()" title="Create New Mind Map" class="bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer flex items-center shadow">
+                    <i class="fa-solid fa-plus mr-1"></i>New
+                </button>
             </div>
         </div>
 
@@ -262,6 +267,10 @@
 
     <!-- Main JavaScript Application -->
     <script>
+        // Multi-file / Category State
+        let allMaps = {};
+        let currentMapId = 'default_map';
+
         let mindMapData = {
             title: "My Main Idea",
             nodes: [
@@ -288,7 +297,7 @@
         const inspectorPanel = document.getElementById('inspectorPanel');
 
         window.onload = function() {
-            loadFromLocalStorage();
+            loadAllMaps();
             render();
             setupPanAndZoom();
             centerCanvas();
@@ -303,24 +312,95 @@
             }
         }
 
-        function saveToLocalStorage() {
-            mindMapData.title = document.getElementById('mapTitle').value;
-            localStorage.setItem('mindmap_ultimate_data', JSON.stringify(mindMapData));
-        }
-
-        function loadFromLocalStorage() {
-            const saved = localStorage.getItem('mindmap_ultimate_data');
-            if (saved) {
+        // --- MULTI-FILE / CATEGORY MANAGEMENT ---
+        function loadAllMaps() {
+            const savedAll = localStorage.getItem('mindmap_all_collections');
+            if (savedAll) {
                 try {
-                    const parsed = JSON.parse(saved);
-                    if (parsed && parsed.nodes && parsed.nodes.length > 0) {
-                        mindMapData = parsed;
-                    }
-                } catch(e) { console.error(e); }
+                    allMaps = JSON.parse(savedAll);
+                } catch(e) { allMaps = {}; }
             }
+
+            // Fallback jika kosong atau migrasi data lama
+            if (!allMaps || Object.keys(allMaps).length === 0) {
+                const oldData = localStorage.getItem('mindmap_ultimate_data');
+                if (oldData) {
+                    try {
+                        mindMapData = JSON.parse(oldData);
+                    } catch(e) {}
+                }
+                allMaps = {
+                    'default_map': mindMapData
+                };
+            }
+
+            const savedCurrentId = localStorage.getItem('mindmap_current_id');
+            if (savedCurrentId && allMaps[savedCurrentId]) {
+                currentMapId = savedCurrentId;
+            } else {
+                currentMapId = Object.keys(allMaps)[0];
+            }
+
+            mindMapData = allMaps[currentMapId];
             document.getElementById('mapTitle').value = mindMapData.title || "My Main Idea";
+            updateCategoryDropdown();
         }
 
+        function saveAllMaps() {
+            mindMapData.title = document.getElementById('mapTitle').value || "My Main Idea";
+            allMaps[currentMapId] = mindMapData;
+            localStorage.setItem('mindmap_all_collections', JSON.stringify(allMaps));
+            localStorage.setItem('mindmap_current_id', currentMapId);
+            updateCategoryDropdown();
+        }
+
+        function updateCategoryDropdown() {
+            const select = document.getElementById('mapCategorySelect');
+            select.innerHTML = '';
+            for (let id in allMaps) {
+                const opt = document.createElement('option');
+                opt.value = id;
+                opt.textContent = allMaps[id].title || "Untitled Map";
+                if (id === currentMapId) opt.selected = true;
+                select.appendChild(opt);
+            }
+        }
+
+        function switchMapCategory(newId) {
+            if (allMaps[newId]) {
+                saveAllMaps(); // simpan dulu yang aktif
+                currentMapId = newId;
+                mindMapData = allMaps[currentMapId];
+                document.getElementById('mapTitle').value = mindMapData.title || "My Main Idea";
+                scale = 1;
+                render();
+                centerCanvas();
+                localStorage.setItem('mindmap_current_id', currentMapId);
+            }
+        }
+
+        function createNewMapPrompt() {
+            const mapName = prompt("Enter a name for your new Mind Map category (e.g., Business Strategy, Presentation):", "New Mind Map");
+            if (!mapName) return;
+
+            const newId = 'map_' + Date.now();
+            allMaps[newId] = {
+                title: mapName,
+                nodes: [
+                    { id: "root", text: mapName, x: 2300, y: 2300, color: "#8b5cf6", shape: "rounded", notes: "Central idea.", priority: "normal", lineStyle: "bezier", parent: null }
+                ]
+            };
+
+            currentMapId = newId;
+            mindMapData = allMaps[currentMapId];
+            document.getElementById('mapTitle').value = mindMapData.title;
+            scale = 1;
+            saveAllMaps();
+            render();
+            centerCanvas();
+        }
+
+        // --- RENDER & CANVAS ---
         function render() {
             nodesContainer.innerHTML = '';
             connectionsLayer.innerHTML = '';
@@ -429,7 +509,7 @@
                 window.addEventListener('mouseup', function() {
                     if (isDraggingNode) {
                         isDraggingNode = false;
-                        saveToLocalStorage();
+                        saveAllMaps();
                     }
                 });
 
@@ -442,7 +522,7 @@
             });
 
             if (isOutlineView) renderOutline();
-            saveToLocalStorage();
+            saveAllMaps();
         }
 
         function drawConnection(p1, p2, style) {
@@ -490,15 +570,11 @@
 
             visualWorkspace.addEventListener('wheel', function(e) {
                 e.preventDefault();
-                
                 const zoomFactor = 1.15;
                 const rect = visualWorkspace.getBoundingClientRect();
-                
-                // Get mouse position relative to workspace
                 const mouseX = e.clientX - rect.left;
                 const mouseY = e.clientY - rect.top;
 
-                // Determine new scale
                 let oldScale = scale;
                 if (e.deltaY < 0) {
                     scale = Math.min(scale * zoomFactor, 3.5);
@@ -506,7 +582,6 @@
                     scale = Math.max(scale / zoomFactor, 0.2);
                 }
 
-                // Adjust panX and panY so zoom centers on the mouse pointer
                 panX = mouseX - (mouseX - panX) * (scale / oldScale);
                 panY = mouseY - (mouseY - panY) * (scale / oldScale);
 
@@ -547,6 +622,7 @@
             if (!activeNodeId) return;
             const node = mindMapData.nodes.find(function(n) { return n.id === activeNodeId; });
             if (node) { node.text = val; render(); }
+            updateCategoryDropdown();
         }
 
         function updateActiveNodeNotes(val) {
@@ -873,7 +949,7 @@
         }
 
         function escapeHtml(text) {
-            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            const map = { '&': '&', '<': '<', '>': '>', '"': '"', "'": ''' };
             return text.replace(/[&<>"']/g, function(m) { return map[m]; });
         }
     </script>
